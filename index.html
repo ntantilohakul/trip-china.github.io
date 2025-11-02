@@ -3,520 +3,604 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>แพลนเที่ยวฉงชิ่ง (Interactive)</title>
+    <title>แพลนเที่ยวฉงชิ่ง 6 วัน 5 คืน</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <!-- Chosen Palette: Calm Neutral with Teal Accent -->
-    <!-- Application Structure Plan:
-        โครงสร้างแบบ Dual-View SPA (Single-Page Application)
-        1. 'Itinerary View' (หน้าหลัก): แสดงแพลนการเดินทางทีละวัน ผู้ใช้สามารถคลิกปุ่ม Day 1-6 เพื่อสลับดูเนื้อหาของวันนั้นๆ (Dynamic Content Display)
-        2. 'Explore View': แสดงสถานที่ทั้งหมดในรูปแบบ Grid Cards ผู้ใช้สามารถฟิลเตอร์ตาม 'Zone' หรือ 'Type' (เช่น คาเฟ่, วิวเมือง) ได้ และมี Donut chart สรุปประเภทสถานที่
-        3. Modal Interaction: ไม่ว่าจะอยู่ View ไหน การคลิกที่ "ชื่อสถานที่" จะเปิด Modal pop-up เพื่อแสดงรายละเอียดเชิงลึก (จาก CSV) เช่น การเดินทาง, DiDi Pin
-        เหตุผลที่เลือกโครงสร้างนี้: เพื่อแยก "แผนการเดินทางที่จัดไว้แล้ว" (Itinerary) ออกจาก "ฐานข้อมูลสถานที่" (Explore) ทำให้ผู้ใช้สามารถดูแผนที่วางไว้ หรือจะออกไปสำรวจสถานที่อื่นๆ ตามหมวดหมู่ที่สนใจก็ได้ เพิ่มความยืดหยุ่นในการใช้งาน
-    -->
-    <!-- Visualization & Content Choices:
-        - Itinerary Data (Source: Itinerary MD): Goal(Organize) -> Viz(Interactive day-by-day sections) -> Interaction(Click Day 1-6 buttons to show/hide content) -> Justification(Focus user on one day at a time) -> Method(JS + HTML/Tailwind)
-        - Attractions List (Source: CSV): Goal(Organize/Inform) -> Viz(Filterable Grid Cards) -> Interaction(Click Zone/Type buttons to filter grid) -> Justification(Allows exploration by category) -> Method(JS + HTML/Tailwind)
-        - Attraction Details (Source: CSV): Goal(Inform) -> Viz(Modal Pop-up) -> Interaction(Click attraction name to open modal) -> Justification(Provides deep-level info without cluttering UI) -> Method(JS + HTML/Tailwind)
-        - Attraction Types (Source: CSV): Goal(Compare/Inform) -> Viz(Donut Chart) -> Interaction(Hover for tooltips) -> Justification(Fulfills mandatory Chart.js requirement by summarizing data composition) -> Method(Chart.js Canvas)
-    -->
-    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        body {
-            font-family: 'Inter', sans-serif;
-        }
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=Sarabun:wght@400;500;700&display=swap');
         body {
             font-family: 'Sarabun', sans-serif;
         }
-        .chart-container {
+        .day-card {
+            border-left: 4px solid #0d9488;
+            transition: all 0.3s ease;
+        }
+        .day-card:hover {
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            border-left-width: 6px;
+        }
+        .timeline-dot {
+            width: 12px;
+            height: 12px;
+            background: #0d9488;
+            border-radius: 50%;
+            position: absolute;
+            left: -6px;
+            top: 8px;
+        }
+        .activity-item {
             position: relative;
-            width: 100%;
-            max-width: 500px;
-            margin-left: auto;
-            margin-right: auto;
-            height: 300px;
-            max-height: 350px;
+            padding-left: 20px;
         }
-        @media (min-width: 768px) {
-            .chart-container {
-                height: 350px;
+        @media print {
+            body {
+                background: white;
             }
-        }
-        .modal-backdrop {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.6);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 50;
-        }
-        .modal-content {
-            background-color: white;
-            padding: 2rem;
-            border-radius: 0.5rem;
-            width: 90%;
-            max-width: 600px;
-            max-height: 80vh;
-            overflow-y: auto;
-        }
-        .nav-button.active {
-            background-color: #0d9488;
-            color: white;
-        }
-        .day-button.active {
-            background-color: #0d9488;
-            color: white;
-            border-color: #0d9488;
-        }
-        .filter-button.active {
-            background-color: #14b8a6;
-            color: white;
-        }
-        .attraction-link {
-            cursor: pointer;
-            color: #0d9488;
-            font-weight: 500;
-            text-decoration: underline;
-        }
-        .attraction-link:hover {
-            color: #14b8a6;
+            .no-print {
+                display: none;
+            }
         }
     </style>
 </head>
-<body class="bg-gray-50 text-gray-800">
-
-    <header class="bg-white shadow-md sticky top-0 z-40">
-        <nav class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between items-center h-16">
-                <h1 class="text-2xl font-bold text-teal-700">Chongqing Trip Explorer</h1>
-                <div class="flex space-x-2">
-                    <button id="nav-itinerary" class="nav-button py-2 px-4 rounded-md font-medium">แพลนการเดินทาง</button>
-                    <button id="nav-explore" class="nav-button py-2 px-4 rounded-md font-medium">สำรวจสถานที่</button>
-                </div>
-            </div>
-        </nav>
+<body class="bg-gradient-to-br from-teal-50 to-cyan-50">
+    
+    <!-- Header -->
+    <header class="bg-gradient-to-r from-teal-600 to-cyan-600 text-white py-8 shadow-lg no-print">
+        <div class="max-w-5xl mx-auto px-4">
+            <h1 class="text-4xl font-bold mb-2">🇨🇳 ฉงชิ่ง 6 วัน 5 คืน</h1>
+            <p class="text-teal-100">แผนการเดินทางสรุปฉบับสมบูรณ์ (ฉบับปรับปรุง)</p>
+        </div>
     </header>
 
-    <main class="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
-
-        <!-- ===== Itinerary View ===== -->
-        <section id="itinerary-view">
-            <div class="bg-white p-6 rounded-lg shadow-sm">
-                <h2 class="text-3xl font-bold mb-4 text-teal-800">แพลนการเดินทาง 6 วัน 5 คืน</h2>
-                <p class="text-gray-600 mb-6">
-                    นี่คือแผนการเดินทางที่จัดลำดับตามวันและโซนที่ใกล้เคียงกัน คุณสามารถคลิกปุ่มด้านล่างเพื่อดูแผนของแต่ละวัน และคลิกที่ชื่อสถานที่ (เช่น <span class="font-bold text-teal-700">"Hongyadong"</span>) เพื่อดูรายละเอียดเพิ่มเติมได้ทันที
-                </p>
-
-                <nav class="flex flex-wrap gap-2 mb-6">
-                    <button class="day-button border border-gray-300 py-2 px-4 rounded-full transition" data-day="day-1">วันที่ 1</button>
-                    <button class="day-button border border-gray-300 py-2 px-4 rounded-full transition" data-day="day-2">วันที่ 2</button>
-                    <button class="day-button border border-gray-300 py-2 px-4 rounded-full transition" data-day="day-3">วันที่ 3</button>
-                    <button class="day-button border border-gray-300 py-2 px-4 rounded-full transition" data-day="day-4">วันที่ 4</button>
-                    <button class="day-button border border-gray-300 py-2 px-4 rounded-full transition" data-day="day-5">วันที่ 5</button>
-                    <button class="day-button border border-gray-300 py-2 px-4 rounded-full transition" data-day="day-6">วันที่ 6</button>
-                </nav>
-
-                <div id="itinerary-content">
-                    <!-- Content will be injected by JS -->
+    <!-- Main Content -->
+    <main class="max-w-5xl mx-auto px-4 py-8">
+        
+        <!-- Quick Info -->
+        <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
+                <div class="p-4 bg-teal-50 rounded-lg">
+                    <div class="text-3xl font-bold text-teal-700">6</div>
+                    <div class="text-sm text-gray-600">วัน</div>
+                </div>
+                <div class="p-4 bg-cyan-50 rounded-lg">
+                    <div class="text-3xl font-bold text-cyan-700">5</div>
+                    <div class="text-sm text-gray-600">คืน</div>
+                </div>
+                <div class="p-4 bg-blue-50 rounded-lg">
+                    <div class="text-3xl font-bold text-blue-700">40+</div>
+                    <div class="text-sm text-gray-600">สถานที่</div>
                 </div>
             </div>
-        </section>
+        </div>
 
-        <!-- ===== Explore View ===== -->
-        <section id="explore-view" class="hidden">
-            <div class="bg-white p-6 rounded-lg shadow-sm mb-6">
-                <h2 class="text-3xl font-bold mb-4 text-teal-800">สำรวจสถานที่ทั้งหมด</h2>
-                <p class="text-gray-600 mb-6">
-                    ส่วนนี้คือฐานข้อมูลสถานที่ทั้งหมดจากไฟล์ CSV ของคุณ คุณสามารถใช้ฟิลเตอร์เพื่อค้นหาสถานที่ตาม "โซน" หรือ "ประเภท" ที่คุณสนใจได้
-                </p>
+        <!-- Flight & Accommodation Info -->
+        <div class="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg shadow-md p-6 mb-6">
+            <h3 class="text-2xl font-bold text-blue-800 mb-4">✈️ ข้อมูลการเดินทางและที่พัก</h3>
+            
+            <div class="grid md:grid-cols-2 gap-6">
+                <!-- Flights -->
+                <div class="bg-white rounded-lg p-4">
+                    <h4 class="font-bold text-lg text-blue-700 mb-3 flex items-center">
+                        <span class="text-2xl mr-2">✈️</span> เที่ยวบิน
+                    </h4>
+                    
+                    <div class="space-y-3">
+                        <div class="border-l-4 border-green-500 pl-3">
+                            <div class="text-sm text-gray-600">เที่ยวบินไป</div>
+                            <div class="font-bold text-green-700">FD556</div>
+                            <div class="text-sm text-gray-700">กรุงเทพฯ (DMK) → ฉงชิ่ง (CKG)</div>
+                        </div>
+                        
+                        <div class="border-l-4 border-orange-500 pl-3">
+                            <div class="text-sm text-gray-600">เที่ยวบินกลับ</div>
+                            <div class="font-bold text-orange-700">FD557</div>
+                            <div class="text-sm text-gray-700">ฉงชิ่ง (CKG) → กรุงเทพฯ (DMK)</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Accommodation -->
+                <div class="bg-white rounded-lg p-4">
+                    <h4 class="font-bold text-lg text-blue-700 mb-3 flex items-center">
+                        <span class="text-2xl mr-2">🏨</span> ที่พัก
+                    </h4>
+                    
+                    <div class="border-l-4 border-purple-500 pl-3">
+                        <div class="font-bold text-purple-700 text-lg">โรงแรมสโตน</div>
+                        <div class="text-sm text-gray-700 mt-1">Stone Hotel</div>
+                        <div class="text-sm text-gray-600 mt-2">
+                            📍 จัตุรัสสรรพสินค้าเจียฟางเป่ย<br>
+                            ใกล้ ราฟเฟิลส์พลาซ่า (Raffles Plaza)
+                        </div>
+                        <div class="text-xs text-teal-600 mt-2 flex items-center">
+                            <span class="mr-1">💡</span> ทำเลดีใจกลางเมือง เดินทางสะดวก
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
 
-                <h3 class="text-xl font-semibold mb-3">ฟิลเตอร์ตามโซน (Zone)</h3>
-                <div id="zone-filters" class="flex flex-wrap gap-2 mb-4">
-                    <button class="filter-button active border border-gray-300 py-1 px-3 rounded-full text-sm" data-filter-group="zone" data-filter="all">All Zones</button>
+        <!-- Day 1 -->
+        <div class="day-card bg-white rounded-lg shadow-md p-6 mb-4">
+            <div class="flex items-center mb-4">
+                <div class="bg-teal-600 text-white px-4 py-2 rounded-full font-bold text-lg">วันที่ 1</div>
+                <h2 class="ml-4 text-2xl font-bold text-gray-800">เดินทาง & ไฮไลท์กลางคืน</h2>
+            </div>
+            
+            <div class="space-y-3 ml-4">
+                <div class="activity-item">
+                    <div class="timeline-dot"></div>
+                    <div class="font-semibold text-teal-700">เช้า</div>
+                    <div class="text-gray-700">✈️ <strong>FD556</strong> ถึงสนามบิน CKG → นั่ง MRT เข้าเมือง</div>
+                    <div class="text-sm text-gray-500 ml-4">🚇 สาย 10 → 3 → 1 ลง Jiaochangkou (~50 นาที)</div>
+                    <div class="text-gray-700">🏨 Check-in <strong>โรงแรมสโตน</strong></div>
+                </div>
+                
+                <div class="activity-item">
+                    <div class="timeline-dot"></div>
+                    <div class="font-semibold text-teal-700">บ่าย</div>
+                    <div class="text-gray-700">📍 <strong>Jiefangbei (解放碑)</strong> - อนุสาวรีย์ปลดแอก แลนด์มาร์คกลางเมือง</div>
+                    <div class="text-sm text-gray-500 ml-4">🚶‍♂️ เดินจากโรงแรม ~5 นาที</div>
+                    <div class="text-gray-700">📍 <strong>Luohan Temple (罗汉寺)</strong> - วัดเก่า บานหน้าต่างกลมสวย</div>
+                    <div class="text-sm text-gray-500 ml-4">🚶‍♂️ เดินจาก Jiefangbei ~10 นาที</div>
+                </div>
+                
+                <div class="activity-item">
+                    <div class="timeline-dot"></div>
+                    <div class="font-semibold text-teal-700">เย็น-ค่ำ ⭐⭐</div>
+                    <div class="text-gray-700">📍 <strong>Hongyadong (洪崖洞)</strong> - สถาปัตยกรรมจีนโบราณ เปิดไฟสวยกลางคืน</div>
+                    <div class="text-sm text-gray-500 ml-4">🚇 MRT สาย 1 ลง Xiaoshizi ทางออก 1 เดิน 15 นาที</div>
+                    <div class="text-sm text-amber-600 ml-4">⏰ แนะนำไปหลัง 18:00 เพื่อดูไฟยามค่ำคืน</div>
+                    <div class="text-gray-700">☕ <strong>Xiaobo Tea House (小波茶馆)</strong> - ร้านน้ำชาในหงหย่าต้ง</div>
+                    <div class="text-gray-700">📍 <strong>Qiansimen Bridge (千厮门大桥)</strong> - Diamond Square วิวสะพาน</div>
+                    <div class="text-sm text-gray-500 ml-4">🚶‍♂️ เดินข้ามสะพานจาก Hongyadong</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Day 2 -->
+        <div class="day-card bg-white rounded-lg shadow-md p-6 mb-4">
+            <div class="flex items-center mb-4">
+                <div class="bg-teal-600 text-white px-4 py-2 rounded-full font-bold text-lg">วันที่ 2</div>
+                <h2 class="ml-4 text-2xl font-bold text-gray-800">จุดชมวิว & ย่านโบราณ Yuzhong</h2>
+            </div>
+            
+            <div class="space-y-3 ml-4">
+                <div class="activity-item">
+                    <div class="timeline-dot"></div>
+                    <div class="font-semibold text-teal-700">เช้า ⭐⭐</div>
+                    <div class="text-gray-700">📍 <strong>Liziba Station (李子坝站)</strong> - รถไฟทะลุตึก จุดชมวิวชั้นล่าง</div>
+                    <div class="text-sm text-gray-500 ml-4">🚇 MRT สาย 2 ลง Liziba | ⏰ ควรไปเช้า (ก่อน 8:00)</div>
+                    <div class="text-gray-700">☕ <strong>MPJ Tea (苗品记茶馆 三层马路店)</strong> - ร้านน้ำชาวิวรถไฟ</div>
+                    <div class="text-sm text-gray-500 ml-4">🚖 DiDi จาก Liziba ~10 นาที</div>
+                </div>
+                
+                <div class="activity-item">
+                    <div class="timeline-dot"></div>
+                    <div class="font-semibold text-teal-700">สาย</div>
+                    <div class="text-gray-700">📍 <strong>Eling Park / Testbed 2 (贰厂文创公园)</strong> - โรงพิมพ์เก่า ย่านศิลปะคาเฟ่</div>
+                    <div class="text-sm text-gray-500 ml-4">🚇 MRT สาย 1 ลง Eling ทางออก 2 เดิน 10 นาที</div>
+                </div>
+                
+                <div class="activity-item">
+                    <div class="timeline-dot"></div>
+                    <div class="font-semibold text-teal-700">บ่าย</div>
+                    <div class="text-gray-700">📍 <strong>Shibati (十八梯)</strong> - ถนนขั้นบันไดโบราณ ย่านของกิน</div>
+                    <div class="text-sm text-gray-500 ml-4">🚇 MRT สาย 1/2 ลง Jiaochangkou เดิน 10 นาที</div>
+                    <div class="text-gray-700">📍 <strong>Kuixing Building (魁星楼)</strong> - ตึกซ้อนตึก เมืองบนตึก</div>
+                    <div class="text-sm text-gray-500 ml-4">🚇 MRT ลง Linjiangmen ทางออก 2</div>
+                </div>
+                
+                <div class="activity-item">
+                    <div class="timeline-dot"></div>
+                    <div class="font-semibold text-teal-700">เย็น</div>
+                    <div class="text-gray-700">📍 <strong>Gangyu Square</strong> - มุม Iconic วิว Raffles City</div>
+                    <div class="text-sm text-gray-500 ml-4">🚇 Xiaoshizi Exit 8</div>
+                    <div class="text-gray-700">📍 <strong>Chaotianmen Square (朝天门广场)</strong> + <strong>Raffles City</strong></div>
+                    <div class="text-sm text-gray-500 ml-4">🚶‍♂️ เดินจาก Gangyu ~10 นาที</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Day 3 -->
+        <div class="day-card bg-white rounded-lg shadow-md p-6 mb-4">
+            <div class="flex items-center mb-4">
+                <div class="bg-teal-600 text-white px-4 py-2 rounded-full font-bold text-lg">วันที่ 3</div>
+                <h2 class="ml-4 text-2xl font-bold text-gray-800">ฝั่ง Nan'an & จุดชมวิวยามค่ำคืน</h2>
+            </div>
+            
+            <div class="space-y-3 ml-4">
+                <div class="activity-item">
+                    <div class="timeline-dot"></div>
+                    <div class="font-semibold text-teal-700">เช้า ⭐⭐</div>
+                    <div class="text-gray-700">📍 <strong>Yangtze Cableway</strong> - กระเช้าข้ามแม่น้ำแยงซี</div>
+                    <div class="text-sm text-gray-500 ml-4">🚇 MRT สาย 1/6 ลง Xiaoshizi เดิน 10 นาที</div>
+                    <div class="text-sm text-amber-600 ml-4">⚠️ คิวยาวมาก ควรไปก่อน 8:00 | ค่าตั๋ว 30 หยวน</div>
+                </div>
+                
+                <div class="activity-item">
+                    <div class="timeline-dot"></div>
+                    <div class="font-semibold text-teal-700">สาย</div>
+                    <div class="text-gray-700">📍 <strong>Xiahao Lane (下浩里)</strong> - ตรอกถ่ายภาพฟีลโบราณลับๆ</div>
+                    <div class="text-sm text-gray-500 ml-4">🚇 MRT สาย 6 ลง Shangxinjie ทางออก 1 เดิน 10 เมตร</div>
+                    <div class="text-gray-700">☕ <strong>Swimin Cafe (后堡社区店)</strong> - คาเฟ่วิวสวย จุดชมวิวที่ดีที่สุด</div>
+                    <div class="text-sm text-gray-500 ml-4">🚇 MRT ลง Houbao ทางออก 2 เดิน 5 นาที</div>
+                </div>
+                
+                <div class="activity-item">
+                    <div class="timeline-dot"></div>
+                    <div class="font-semibold text-teal-700">บ่าย</div>
+                    <div class="text-gray-700">📍 <strong>Longmenhao Old Street (龙门浩老街)</strong> - ถนนโบราณฟีลชิงหมิง</div>
+                    <div class="text-sm text-gray-500 ml-4">🚇 MRT สาย 6 ลง Shangxinjie ทางออก 2 เดิน 5 นาที</div>
+                    <div class="text-gray-700">📸 <strong>I'm in Chongqing Frame</strong> + <strong>Mountain City Frame</strong></div>
+                    <div class="text-gray-700">📍 <strong>Nanbin Road Clock Tower (หอนาฬิกา)</strong> - จุดชมวิวฟรีที่ดีที่สุด</div>
+                    <div class="text-sm text-gray-500 ml-4">🚶‍♂️ เดินจาก Longmenhao ~15 นาที</div>
+                </div>
+                
+                <div class="activity-item">
+                    <div class="timeline-dot"></div>
+                    <div class="font-semibold text-teal-700">เย็น-ค่ำ ⭐⭐⭐</div>
+                    <div class="text-gray-700">📍 <strong>Nanshan Yikeshu (一棵树观景台)</strong> - จุดชมวิวพาโนรามากลางคืน</div>
+                    <div class="text-sm text-gray-500 ml-4">🚖 DiDi ปักหมุด "一棵树观景台" ~20 นาที | ค่าเข้า 30 หยวน</div>
+                    <div class="text-gray-700">🍜 <strong>Laowang Hotpot</strong> หรือ 🍖 <strong>Yiyan BBQ Pub (一眼重慶)</strong></div>
+                    <div class="text-sm text-gray-500 ml-4">ทานหม้อไฟหรือปิ้งย่างชมวิวเมือง</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Day 4 -->
+        <div class="day-card bg-white rounded-lg shadow-md p-6 mb-4">
+            <div class="flex items-center mb-4">
+                <div class="bg-teal-600 text-white px-4 py-2 rounded-full font-bold text-lg">วันที่ 4</div>
+                <h2 class="ml-4 text-2xl font-bold text-gray-800">เมืองเก่า & ย่านศิลปะ Shapingba</h2>
+            </div>
+            
+            <div class="space-y-3 ml-4">
+                <div class="activity-item">
+                    <div class="timeline-dot"></div>
+                    <div class="font-semibold text-teal-700">เช้า ⭐</div>
+                    <div class="text-gray-700">📍 <strong>Ciqikou Ancient Town (磁器口古镇)</strong> - เมืองโบราณ ของกิน ช้อปปิ้ง</div>
+                    <div class="text-sm text-gray-500 ml-4">🚇 MRT สาย 1 ลง Ciqikou</div>
+                </div>
+                
+                <div class="activity-item">
+                    <div class="timeline-dot"></div>
+                    <div class="font-semibold text-teal-700">เที่ยง</div>
+                    <div class="text-gray-700">📍 <strong>Zhongshuge Bookstore (钟书阁)</strong> - ร้านหนังสือกระจกเงา</div>
+                    <div class="text-sm text-gray-500 ml-4">🚶‍♂️ เดินจาก Ciqikou หรือ 🚖 DiDi ปักหมุด "钟书阁(重庆店)"</div>
+                </div>
+                
+                <div class="activity-item">
+                    <div class="timeline-dot"></div>
+                    <div class="font-semibold text-teal-700">บ่าย ⭐</div>
+                    <div class="text-gray-700">📍 <strong>Graffiti Street (涂鸦一条街)</strong> - ถนนกราฟฟิตี้ย่าน Huangjueping</div>
+                    <div class="text-sm text-gray-500 ml-4">🚖 DiDi ปักหมุด "涂鸦一条街" ~30 นาที</div>
+                    <div class="text-gray-700">📍 <strong>Sichuan Fine Arts Institute (四川美术学院)</strong> - สถาบันวิจิตรศิลป์</div>
+                    <div class="text-sm text-gray-500 ml-4">🚶‍♂️ เดินจาก Graffiti Street ~5 นาที</div>
+                </div>
+                
+                <div class="activity-item">
+                    <div class="timeline-dot"></div>
+                    <div class="font-semibold text-teal-700">เย็น (Optional)</div>
+                    <div class="text-gray-700">🍜 <strong>Luozhong Hotpot (罗中洞)</strong> - ร้านหม้อไฟในถ้ำ บรรยากาศดี</div>
+                    <div class="text-sm text-gray-500 ml-4">🚖 DiDi ปักหมุด "罗中洞(歌乐山总店)" ~40 นาที</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Day 5 -->
+        <div class="day-card bg-white rounded-lg shadow-md p-6 mb-4">
+            <div class="flex items-center mb-4">
+                <div class="bg-teal-600 text-white px-4 py-2 rounded-full font-bold text-lg">วันที่ 5</div>
+                <h2 class="ml-4 text-2xl font-bold text-gray-800">ฝั่ง Jiangbei & Highlights</h2>
+            </div>
+            
+            <div class="space-y-3 ml-4">
+                <div class="activity-item">
+                    <div class="timeline-dot"></div>
+                    <div class="font-semibold text-teal-700">เช้า ⭐⭐</div>
+                    <div class="text-gray-700">📍 <strong>Hong'en Temple Forest Park (弘恩寺森林公园)</strong> - ศาลาจีน 9 ชั้น</div>
+                    <div class="text-sm text-gray-500 ml-4">🚖 DiDi ปักหมุด "弘恩寺森林公园" ~25 นาที</div>
+                    <div class="text-sm text-amber-600 ml-4">💡 กลางคืนเปิดไฟสวยงาม (ถ้ามีเวลา)</div>
+                </div>
+                
+                <div class="activity-item">
+                    <div class="timeline-dot"></div>
+                    <div class="font-semibold text-teal-700">สาย</div>
+                    <div class="text-gray-700">📍 <strong>The Ring (光环购物公园)</strong> - ห้างสรรพสินค้าสถาปัตยกรรมล้ำสมัย</div>
+                    <div class="text-sm text-gray-500 ml-4">🚇 MRT สาย 5 ลง Chongguang เดิน 5 นาที</div>
+                    <div class="text-gray-700">☕ <strong>% Arabica Chongqing MixC</strong> - ร้านกาแฟมุมสวย</div>
+                </div>
+                
+                <div class="activity-item">
+                    <div class="timeline-dot"></div>
+                    <div class="font-semibold text-teal-700">บ่าย</div>
+                    <div class="text-gray-700">📍 <strong>Chongqing Jiangbeizui Central Park</strong> - สวนสาธารณะฟิลเกาหลี</div>
+                    <div class="text-sm text-gray-500 ml-4">🚇 Xiaoshizi → Dajuyuan (Grand theater) ทางออก 3</div>
+                    <div class="text-gray-700">📸 <strong>Chongqing La La Land</strong> - มุมถนนวิวเมือง</div>
+                    <div class="text-sm text-gray-500 ml-4">🚇 Dajuyuan Station Exit 4</div>
+                    <div class="text-gray-700">📍 <strong>Guanyinqiao - "I'm in Chongqing" Billboard</strong></div>
+                    <div class="text-sm text-gray-500 ml-4">🚇 MRT สาย 3/6 ลง Guanyinqiao ทางออก 7</div>
+                    <div class="text-gray-700">📍 <strong>Beikang Culture Street</strong> - Miniso Land</div>
+                    <div class="text-sm text-gray-500 ml-4">🚶‍♂️ เดินจาก Guanyinqiao ทางออก 6A</div>
+                </div>
+                
+                <div class="activity-item">
+                    <div class="timeline-dot"></div>
+                    <div class="font-semibold text-teal-700">เย็น (เก็บตก)</div>
+                    <div class="text-gray-700">📍 <strong>Crown Escalator</strong> - บันไดเลื่อนยาวที่สุดในเอเชีย</div>
+                    <div class="text-sm text-gray-500 ml-4">🚇 MRT สาย 1/3 ลง Lianglukou | ค่าตั๋ว 2 หยวน</div>
+                    <div class="text-gray-700">📍 <strong>มุมตึก Twin Tower (元通寺小区)</strong> - มุมฮิตถ่ายรูป</div>
+                    <div class="text-sm text-gray-500 ml-4">🚇 Xiaoshizi Exit 5B เดิน 10 นาที</div>
+                    <div class="text-gray-700">🛍️ ซื้อของฝากที่ Jiefangbei</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Day 6 -->
+        <div class="day-card bg-white rounded-lg shadow-md p-6 mb-6">
+            <div class="flex items-center mb-4">
+                <div class="bg-teal-600 text-white px-4 py-2 rounded-full font-bold text-lg">วันที่ 6</div>
+                <h2 class="ml-4 text-2xl font-bold text-gray-800">เดินทางกลับ</h2>
+            </div>
+            
+            <div class="space-y-3 ml-4">
+                <div class="activity-item">
+                    <div class="timeline-dot"></div>
+                    <div class="font-semibold text-teal-700">เช้า</div>
+                    <div class="text-gray-700">🍳 ทานอาหารเช้า → Check-out <strong>โรงแรมสโตน</strong></div>
+                </div>
+                
+                <div class="activity-item">
+                    <div class="timeline-dot"></div>
+                    <div class="font-semibold text-teal-700">สาย</div>
+                    <div class="text-gray-700">🚇 นั่ง MRT ไปสนามบิน CKG</div>
+                    <div class="text-sm text-gray-500 ml-4">สาย 1 → เปลี่ยนสาย 3 → เปลี่ยนสาย 10 ลง Airport (~50 นาที)</div>
+                </div>
+                
+                <div class="activity-item">
+                    <div class="timeline-dot"></div>
+                    <div class="font-semibold text-teal-700">กลับบ้าน</div>
+                    <div class="text-gray-700">✈️ <strong>FD557</strong> เดินทางกลับกรุงเทพฯ</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Optional Day Trip -->
+        <div class="bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg shadow-md p-6 mb-6">
+            <h3 class="text-2xl font-bold text-purple-800 mb-4">🏔️ ทริปเสริม (ถ้ามีเวลา)</h3>
+            
+            <div class="grid md:grid-cols-2 gap-4">
+                <div class="bg-white rounded-lg p-4">
+                    <h4 class="font-bold text-purple-700 mb-2">Three Natural Bridges (天生三桥)</h4>
+                    <div class="text-sm text-gray-700">
+                        <div>• กลุ่มสะพานหินธรรมชาติที่ใหญ่ที่สุดในเอเชีย</div>
+                        <div>• อุทยานหลุมฟ้า (Wulong County)</div>
+                        <div class="text-teal-600 mt-2">🚄 รถไฟจาก Chongqing North → Wulong แล้วต่อรถบัส</div>
+                        <div class="text-amber-600">⏰ ใช้เวลาทั้งวัน (แทนที่วันที่ 4 หรือ 5)</div>
+                    </div>
+                </div>
+                
+                <div class="bg-white rounded-lg p-4">
+                    <h4 class="font-bold text-purple-700 mb-2">Dazu Rock Carvings (大足石刻)</h4>
+                    <div class="text-sm text-gray-700">
+                        <div>• เมืองประติมากรรมพระพุทธหินแกะสลัก</div>
+                        <div>• มรดกโลก UNESCO</div>
+                        <div class="text-teal-600 mt-2">🚄 รถไฟไป Bishan แล้วต่อแท็กซี่</div>
+                        <div class="text-amber-600">⏰ ใช้เวลาทั้งวัน</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Transportation Guide -->
+        <div class="bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg shadow-md p-6 mb-6">
+            <h3 class="text-2xl font-bold text-green-800 mb-4">🚇 คู่มือการเดินทาง</h3>
+            
+            <div class="space-y-4">
+                <!-- Airport Transfer -->
+                <div class="bg-white rounded-lg p-4">
+                    <h4 class="font-bold text-green-700 mb-2">✈️ จากสนามบิน CKG เข้าเมือง</h4>
+                    <div class="text-sm text-gray-700 space-y-1">
+                        <div><strong>🚇 MRT (แนะนำ):</strong> สาย 10 → เปลี่ยนสาย 3 → เปลี่ยนสาย 1 ลง Jiaochangkou</div>
+                        <div class="ml-4 text-gray-600">• ใช้เวลา: ~50 นาที | ค่าโดยสาร: ~7 หยวน</div>
+                        <div><strong>🚖 แท็กซี่:</strong> ตรงไปโรงแรม ~40 นาที, ค่าโดยสาร 60-80 หยวน</div>
+                    </div>
                 </div>
 
-                <h3 class="text-xl font-semibold mb-3">ฟิลเตอร์ตามประเภท (Type)</h3>
-                <div id="type-filters" class="flex flex-wrap gap-2 mb-6">
-                    <button class="filter-button active border border-gray-300 py-1 px-3 rounded-full text-sm" data-filter-group="type" data-filter="all">All Types</button>
+                <!-- Metro Lines -->
+                <div class="bg-white rounded-lg p-4">
+                    <h4 class="font-bold text-green-700 mb-2">🚇 สาย MRT สำคัญ</h4>
+                    <div class="text-sm text-gray-700 space-y-1">
+                        <div><strong>สาย 1:</strong> Ciqikou → Eling → Jiaochangkou → Xiaoshizi (สถานที่หลักๆ)</div>
+                        <div><strong>สาย 2:</strong> Liziba (รถไฟทะลุตึก)</div>
+                        <div><strong>สาย 3:</strong> เชื่อมสนามบินและเมือง</div>
+                        <div><strong>สาย 5:</strong> The Ring</div>
+                        <div><strong>สาย 6:</strong> Xiaoshizi, Shangxinjie (Longmenhao, Xiahaoli)</div>
+                        <div class="mt-2 text-amber-600">💳 ซื้อบัตรเติมเงินได้ที่สถานี ค่าโดยสารเริ่มต้น 2 หยวน</div>
+                    </div>
+                </div>
+
+                <!-- Key Stations -->
+                <div class="bg-white rounded-lg p-4">
+                    <h4 class="font-bold text-green-700 mb-2">📍 สถานีสำคัญใกล้สถานที่ท่องเที่ยว</h4>
+                    <div class="grid md:grid-cols-2 gap-2 text-sm text-gray-700">
+                        <div><strong>Xiaoshizi:</strong> Hongyadong, Chaotianmen, กระเช้า, Twin Tower</div>
+                        <div><strong>Jiaochangkou:</strong> Jiefangbei, โรงแรม, Shibati</div>
+                        <div><strong>Liziba:</strong> รถไฟทะลุตึก, MPJ Tea</div>
+                        <div><strong>Ciqikou:</strong> เมืองโบราณ, Zhongshuge</div>
+                        <div><strong>Linjiangmen:</strong> Hongyadong, Kuixing Building</div>
+                        <div><strong>Lianglukou:</strong> บันไดเลื่อนคราวน์</div>
+                        <div><strong>Shangxinjie:</strong> Longmenhao, Xiahaoli</div>
+                        <div><strong>Guanyinqiao:</strong> I'm in Chongqing, Beikang Street</div>
+                    </div>
+                </div>
+
+                <!-- DiDi/Taxi -->
+                <div class="bg-white rounded-lg p-4">
+                    <h4 class="font-bold text-green-700 mb-2">🚖 แท็กซี่ / DiDi (สำหรับสถานที่ไกล)</h4>
+                    <div class="text-sm text-gray-700 space-y-1">
+                        <div><strong>ต้องใช้รถ:</strong> Nanshan (一棵树), Hong'en Temple (弘恩寺), MPJ Tea (苗品记茶馆), Graffiti Street (涂鸦街), Luozhong Hotpot (罗中洞)</div>
+                        <div class="text-amber-600 mt-2">💡 <strong>เคล็ดลับ DiDi:</strong></div>
+                        <div class="ml-4 text-gray-600">1. ดาวน์โหลดแอป DiDi และผูกบัตรเครดิต</div>
+                        <div class="ml-4 text-gray-600">2. ใช้ชื่อภาษาจีนในไฟล์นี้ปักหมุด</div>
+                        <div class="ml-4 text-gray-600">3. บันทึกชื่อจุดหมายไว้ในมือถือล่วงหน้า</div>
+                    </div>
+                </div>
+
+                <!-- Walking Areas -->
+                <div class="bg-white rounded-lg p-4">
+                    <h4 class="font-bold text-green-700 mb-2">🚶‍♂️ เดินเที่ยวได้ในย่านเดียวกัน</h4>
+                    <div class="text-sm text-gray-700 space-y-1">
+                        <div><strong>ย่าน Jiefangbei:</strong> โรงแรม → Jiefangbei → Luohan Temple (เดินได้หมด)</div>
+                        <div><strong>ย่าน Hongyadong:</strong> Hongyadong → Qiansimen Bridge → Diamond Square</div>
+                        <div><strong>ฝั่ง Nan'an:</strong> กระเช้า → Longmenhao → Nanbin Road → หอนาฬิกา</div>
+                        <div><strong>ย่าน Xiahaoli:</strong> Xiahao Lane → Swimin Cafe (ใกล้กัน)</div>
+                    </div>
                 </div>
             </div>
+        </div>
 
-            <div class="bg-white p-6 rounded-lg shadow-sm mb-6">
-                 <h3 class="text-2xl font-bold mb-4 text-center text-teal-800">สรุปประเภทสถานที่</h3>
-                 <div class="chart-container">
-                    <canvas id="typeChart"></canvas>
-                 </div>
+        <!-- Tips Section -->
+        <div class="bg-gradient-to-r from-amber-50 to-orange-50 rounded-lg shadow-md p-6 mb-6">
+            <h3 class="text-2xl font-bold text-amber-800 mb-4">💡 เคล็ดลับสำคัญ</h3>
+            <div class="grid md:grid-cols-2 gap-4">
+                <div class="space-y-3">
+                    <div class="flex items-start">
+                        <span class="text-amber-600 mr-2 text-xl">⏰</span>
+                        <div>
+                            <div class="font-semibold">เวลาที่เหมาะสม</div>
+                            <div class="text-sm text-gray-700">
+                                • Hongyadong: หลัง 18:00 ดูไฟ<br>
+                                • Liziba & กระเช้า: ก่อน 8:00 หลีกเลี่ยงคิว<br>
+                                • Hong'en Temple: เย็นดูไฟสวย
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="flex items-start">
+                        <span class="text-amber-600 mr-2 text-xl">🎫</span>
+                        <div>
+                            <div class="font-semibold">ค่าเข้าสถานที่</div>
+                            <div class="text-sm text-gray-700">
+                                • กระเช้า: 30 หยวน<br>
+                                • Nanshan Yikeshu: 30 หยวน<br>
+                                • บันไดเลื่อน: 2 หยวน<br>
+                                • สถานที่อื่นส่วนใหญ่: ฟรี
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="flex items-start">
+                        <span class="text-amber-600 mr-2 text-xl">📸</span>
+                        <div>
+                            <div class="font-semibold">จุดถ่ายรูปยอดฮิต</div>
+                            <div class="text-sm text-gray-700">
+                                • Twin Tower มุม (เลนส์ 100mm)<br>
+                                • Gangyu Square (วิว Raffles)<br>
+                                • Xiahaoli (ตรอกโบราณ)<br>
+                                • Nanshan (วิวกลางคืน)
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="space-y-3">
+                    <div class="flex items-start">
+                        <span class="text-amber-600 mr-2 text-xl">📱</span>
+                        <div>
+                            <div class="font-semibold">แอปที่จำเป็น</div>
+                            <div class="text-sm text-gray-700">
+                                • <strong>DiDi:</strong> เรียกรถ (ต้องมี!)<br>
+                                • <strong>Alipay/WeChat Pay:</strong> จ่ายเงิน<br>
+                                • <strong>Google Maps/Baidu:</strong> นำทาง<br>
+                                • <strong>Google Translate:</strong> แปลภาษา
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="flex items-start">
+                        <span class="text-amber-600 mr-2 text-xl">💰</span>
+                        <div>
+                            <div class="font-semibold">เงินและการจ่าย</div>
+                            <div class="text-sm text-gray-700">
+                                • ควรมีเงินสดหยวนติดตัวบ้าง<br>
+                                • QR Code ใช้ได้ทั่วไป<br>
+                                • บัตร MRT ซื้อที่สถานี<br>
+                                • แนะนำเติม 100-200 หยวน
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="flex items-start">
+                        <span class="text-amber-600 mr-2 text-xl">🍜</span>
+                        <div>
+                            <div class="font-semibold">อาหาร</div>
+                            <div class="text-sm text-gray-700">
+                                • หม้อไฟเป็นเมนูยอดฮิต<br>
+                                • อาหารเผ็ดมาก แจ้ง "ไม่เผ็ด" (不辣)<br>
+                                • แนะนำ Laowang, Juanpin, Yiyan BBQ
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
+        </div>
 
-            <div id="places-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                <!-- Place cards will be injected by JS -->
+        <!-- Photo Spots Reference -->
+        <div class="bg-gradient-to-r from-rose-50 to-pink-50 rounded-lg shadow-md p-6 mb-6">
+            <h3 class="text-2xl font-bold text-rose-800 mb-4">📸 จุดถ่ายรูปพิเศษ (สำหรับคนชอบถ่ายรูป)</h3>
+            
+            <div class="grid md:grid-cols-3 gap-4">
+                <div class="bg-white rounded-lg p-3">
+                    <div class="font-bold text-rose-700">มุมตึก Twin Tower</div>
+                    <div class="text-xs text-gray-600">元通寺小区(渝中</div>
+                    <div class="text-sm text-gray-700 mt-1">มุมฮิตสุด! ใช้เลนส์ 100mm</div>
+                </div>
+                
+                <div class="bg-white rounded-lg p-3">
+                    <div class="font-bold text-rose-700">Gangyu Square</div>
+                    <div class="text-xs text-gray-600">Xiaoshizi Exit 8</div>
+                    <div class="text-sm text-gray-700 mt-1">วิว Raffles City ลอยฟ้า</div>
+                </div>
+                
+                <div class="bg-white rounded-lg p-3">
+                    <div class="font-bold text-rose-700">Chongqing La La Land</div>
+                    <div class="text-xs text-gray-600">Dajuyuan Exit 4</div>
+                    <div class="text-sm text-gray-700 mt-1">มุมถนนฟิล La La Land</div>
+                </div>
+                
+                <div class="bg-white rounded-lg p-3">
+                    <div class="font-bold text-rose-700">Xiahao Lane</div>
+                    <div class="text-xs text-gray-600">下浩里</div>
+                    <div class="text-sm text-gray-700 mt-1">ตรอกโบราณลับๆ สวยมาก</div>
+                </div>
+                
+                <div class="bg-white rounded-lg p-3">
+                    <div class="font-bold text-rose-700">Longmenhao Frames</div>
+                    <div class="text-xs text-gray-600">龙门浩老街</div>
+                    <div class="text-sm text-gray-700 mt-1">I'm in CQ + Mountain Frame</div>
+                </div>
+                
+                <div class="bg-white rounded-lg p-3">
+                    <div class="font-bold text-rose-700">Chadianxia Coffee</div>
+                    <div class="text-xs text-gray-600">Huguang Guild Hall</div>
+                    <div class="text-sm text-gray-700 mt-1">คาเฟ่วิวสะพาน Dongshuimen</div>
+                </div>
             </div>
-        </section>
+        </div>
+
+        <!-- Footer -->
+        <div class="text-center text-gray-500 text-sm py-4 no-print">
+            <p class="mb-2">📱 <strong>บันทึกหรือพิมพ์หน้านี้เพื่อใช้ระหว่างเดินทาง</strong></p>
+            <p class="text-xs mb-3">💡 Tips: บันทึกชื่อภาษาจีนทุกสถานที่ไว้ในมือถือเพื่อความสะดวก</p>
+            <button onclick="window.print()" class="bg-teal-600 text-white px-6 py-2 rounded-lg hover:bg-teal-700 transition shadow-md">
+                🖨️ พิมพ์แผนการเดินทาง
+            </button>
+        </div>
 
     </main>
 
-    <!-- ===== Details Modal ===== -->
-    <div id="details-modal" class="modal-backdrop hidden">
-        <div class="modal-content relative">
-            <button id="close-modal" class="absolute top-4 right-4 text-gray-500 hover:text-gray-800 text-2xl font-bold">&times;</button>
-            <h3 id="modal-title" class="text-2xl font-bold mb-4 text-teal-700"></h3>
-            <div id="modal-body" class="space-y-3">
-                <p><strong>รายละเอียด:</strong> <span id="modal-details" class="text-gray-700"></span></p>
-                <p><strong>จุดแนะนำ:</strong> <span id="modal-tip" class="text-gray-700"></span></p>
-                <p><strong>การเดินทาง:</strong> <span id="modal-transport" class="text-gray-700"></span></p>
-                <p><strong>ประเภท:</strong> <span id="modal-type" class="text-gray-700"></span></p>
-                <p><strong>ปักหมุด DiDi:</strong> <span id="modal-didi" class="text-lg font-semibold text-red-600 bg-gray-100 p-2 rounded"></span></p>
-            </div>
-        </div>
-    </div>
-
-    <script>
-        const allPlacesData = [
-            { name: "Chaotianmen Square", details: "จุดบรรจบแม่น้ำแยงซีและเจียหลิง", tip: "", transport: "MRT สาย 1 หรือ 6 ลง Xiaoshizi แล้วเดิน", type: "จัตุรัส/วิวแม่น้ำ", didi: "朝天门广场", zone: "Yuzhong District" },
-            { name: "Hongyadong", details: "ย่านการค้าและสถาปัตยกรรมจีนโบราณริมแม่น้ำ", tip: "", transport: "MRT สาย 1 หรือ 6 ลง Xiaoshizi หรือ Linjiangmen แล้วเดิน", type: "ย่านการค้า/วัฒนธรรม", didi: "洪崖洞", zone: "Yuzhong District" },
-            { name: "Xiaobo Tea House", details: "ร้านน้ำชาในตึก", tip: "อยุ่ที่หงหย่าต้ง", transport: "", type: "คาเฟ่/จุดถ่ายภาพ", didi: "小波茶馆", zone: "Yuzhong District" },
-            { name: "Qiansimen Bridge", details: "สะพานวิวแม่น้ำและตึกระฟ้า", tip: "Diamond Square ลานจัตุรัสสวนสาธารณะ (อีกด้านตรงข้าม Hongyadong) จุดถ่ายรูปวิวสะพานและสวนสาธารณะฉากวิวเมืองฉงชิ้ง 180 องศา", transport: "MRT สาย 1 หรือ 6 ลง Xiaoshizi แล้วเดิน", type: "จุดถ่ายภาพ/วิวเมือง", didi: "千厮门大桥", zone: "Yuzhong District" },
-            { name: "Luohan Temple (Arhat Temple)", details: "วัดเก่าแก่ใจกลางเมือง", tip: "บานหน้าต่างกลม วัดลั่วหาน", transport: "MRT สาย 1 ลง Xiaoshizi แล้วเดินประมาณ 10 นาที", type: "วัด/วัฒนธรรม", didi: "罗汉寺", zone: "Yuzhong District" },
-            { name: "Jiefangbei (People's Liberation Monument)", details: "อนุสาวรีย์ปลดปล่อยประชาชนและย่านช้อปปิ้ง", tip: "แลนด์มาร์คกลางเมือง", transport: "MRT สาย 1 หรือ 2 ลง Jiaochangkou หรือ Linjiangmen", type: "ย่านการค้า/แลนด์มาร์ค", didi: "解放碑", zone: "Yuzhong District" },
-            { name: "Raffles City", details: "ตึกระฟ้าดีไซน์เรือใบ และห้างสรรพสินค้า", tip: "The Crystal - จุดชมวิวบนตึก", transport: "ใกล้ Chaotianmen Square", type: "จุดถ่ายภาพ/วิวเมือง", didi: "重庆来福士", zone: "Yuzhong District" },
-            { name: "Liziba", details: "สถานีรถไฟฟ้ารถไฟฟ้าทะลุอาคาร", tip: "จุดชมวิวชั้นล่าง", transport: "MRT สาย 2 ลง Liziba", type: "จุดถ่ายภาพ/วิวเมือง", didi: "李子坝", zone: "Yuzhong District" },
-            { name: "Eling Park (Testbed 2)", details: "โรงพิมพ์เก่ารีโนเวทเป็นย่านศิลปะและคาเฟ่", tip: "คาเฟ่ มุมถ่ายรูปเยอะ", transport: "MRT สาย 1 ลง Eling", type: "ย่านอาร์ต/คาเฟ่", didi: "贰厂文创公园", zone: "Yuzhong District" },
-            { name: "Shancheng Alley (Third Alley)", details: "ตรอกซอกซอยเก่าแก่บนเนินเขา", tip: "เดินชมวิวเมืองเก่าและแม่น้ำ", transport: "MRT สาย 1 หรือ 2 ลง Jiaochangkou แล้วเดินต่อ", type: "วัฒนธรรม/วิวเมือง", didi: "山城巷", zone: "Yuzhong District" },
-            { name: "Huguang Guild Hall", details: "สถาปัตยกรรมจีนโบราณริมแม่น้ำ", tip: "", transport: "MRT สาย 1 หรือ 6 ลง Xiaoshizi แล้วเดิน", type: "วัฒนธรรม/สถาปัตยกรรม", didi: "湖广会馆", zone: "Yuzhong District" },
-            { name: "Crown Escalator", details: "บันไดเลื่อนในร่มที่ยาวที่สุดแห่งหนึ่งในเอเชีย", tip: "เชื่อมต่อสถานี MRT สองแห่ง", transport: "MRT สาย 1 หรือ 3 ลง Lianglukou", type: "จุดถ่ายภาพ/สถาปัตยกรรม", didi: "皇冠大自动扶梯", zone: "Yuzhong District" },
-            { name: "Bai Xiang Ju", details: "อาคารที่พักอาศัยเก่าแก่สไตล์คลาสสิก", tip: "มุมถ่ายรูปตึกเก่า", transport: "MRT สาย 1 หรือ 6 ลง Xiaoshizi แล้วเดิน", type: "จุดถ่ายภาพ/สถาปัตยกรรม", didi: "白象居", zone: "Yuzhong District" },
-            { name: "Changjiang Cableway (Yangtze River Cableway)", details: "กระเช้าลอยฟ้าข้ามแม่น้ำแยงซี", tip: "คิวยาว ควรไปเช้า", transport: "MRT สาย 1 หรือ 6 ลง Xiaoshizi แล้วเดิน", type: "จุดถ่ายภาพ/วิวเมือง", didi: "长江索道", zone: "Yuzhong District" },
-            { name: "Nanshan Yikeshu Viewing Platform", details: "จุดชมวิวพาโนรามาของเมืองฉงชิ่ง (ฝั่ง Nan'an)", tip: "ไฮไลท์วิวกลางคืน", transport: "แท็กซี่/DiDi ขึ้นเขา", type: "จุดถ่ายภาพ/วิวเมือง", didi: "南山一棵树观景台", zone: "Nan'an District" },
-            { name: "Longmenhao Old Street", details: "ถนนเก่าริมแม่น้ำ รีโนเวทใหม่", tip: "วิวสวย มองกลับไปเห็นฝั่ง Yuzhong", transport: "ลงจากกระเช้าฝั่ง Nan'an แล้วเดินต่อ", type: "วัฒนธรรม/วิวเมือง", didi: "龙门浩老街", zone: "Nan'an District" },
-            { name: "Xuanhuachang Old Street", details: "ถนนเก่า", tip: "", transport: "ใกล้ Longmenhao", type: "วัฒนธรรม", didi: "玄坛庙", zone: "Nan'an District" },
-            { name: "Nanbin Road", details: "ถนนเลียบแม่น้ำฝั่ง Nan'an", tip: "เดินเล่นชมวิว", transport: "", type: "จุดถ่ายภาพ/วิวเมือง", didi: "南滨路", zone: "Nan'an District" },
-            { name: "Laowang Hotpot (Nanshan)", details: "ร้านหม้อไฟบนเขาหนานซาน วิวสวย", tip: "ทานหม้อไฟชมวิวเมือง", transport: "แท็กซี่/DiDi ขึ้นเขา", type: "ร้านอาหาร", didi: "老王洞府火锅(南山店)", zone: "Nan'an District" },
-            { name: "Ciqikou Old Town", details: "เมืองโบราณริมแม่น้ำเจียหลิง", tip: "ของกินเล่น ช้อปปิ้ง", transport: "MRT สาย 1 ลง Ciqikou", type: "ย่านการค้า/วัฒนธรรม", didi: "磁器口古镇", zone: "Shapingba District" },
-            { name: "Zhongshuge Bookstore (Chongqing)", details: "ร้านหนังสือดีไซน์สวยอลังการ", tip: "ร้านหนังสือกระจกเงา", transport: "ใกล้ Ciqikou", type: "จุดถ่ายภาพ/คาเฟ่", didi: "钟书阁(重庆店)", zone: "Shapingba District" },
-            { name: "Sichuan Fine Arts Institute (Huangjueping Campus)", details: "สถาบันวิจิตรศิลป์", tip: "ย่านศิลปะ", transport: "แท็กซี่/DiDi", type: "ย่านอาร์ต/คาเฟ่", didi: "四川美术学院(黄桷坪校区)", zone: "Shapingba District" },
-            { name: "Graffiti Street", details: "ถนนกราฟฟิตี้", tip: "เดินชมศิลปะข้างทาง", transport: "ใกล้ Sichuan Fine Arts Institute", type: "ย่านอาร์ต/คาเฟ่", didi: "涂鸦一条街", zone: "Shapingba District" },
-            { name: "Luozhong Hotpot (Gele Mountain)", details: "ร้านหม้อไฟในถ้ำ", tip: "บรรยากาศดี", transport: "แท็กซี่/DiDi", type: "ร้านอาหาร", didi: "罗中洞(歌乐山总店)", zone: "Shapingba District" },
-            { name: "The HALO", details: "ห้างสรรพสินค้าดีไซน์โมเดิร์น", tip: "", transport: "แท็กซี่/DiDi", type: "ห้างสรรพสินค้า", didi: "光环购物公园", zone: "Jiangbei District" },
-            { name: "Hong'en Temple Forest Park", details: "จุดชมวิวและเดินป่าบนเขา", tip: "มุมฮิต ศาลาจีน 9 ชั้น กลางคืนเปิดไฟสวยงาม", transport: "แท็กซี่/DiDi", type: "สวนป่า/จุดชมวิว", didi: "弘恩寺森林公园", zone: "Jiangbei District" },
-            { name: "Swimin Cafe (Houbao Branch)", details: "นั่งคาเฟ่ชิลๆ มองวิวสวยๆ ที่ Swimin Cafe", tip: "จุดชมวิวที่ดีที่สุดของ Xiaohaoli", transport: "MRT: Chaotianmen เปลี่ยน Qixinggang > Houbao ทางออก 2 เดิน 5 นาที", type: "คาเฟ่/จุดถ่ายภาพ", didi: "后堡社区店", zone: "Jiangbei District" },
-            { name: "I'm in Chongqing big screen", details: "The 'I'm in Chongqing' billboard", tip: "มุมดังมีบิลบอร์ดใจกลางเมือง", transport: "Guanyinqiao Exit 7", type: "จุดถ่ายภาพ/วิวเมือง", didi: "", zone: "Jiangbei District" },
-            { name: "Beikang Culture Street", details: "ย่านชอปปิ้งและห้างสรรพสินค้าใจกลางเมือง", tip: "Miniso Land", transport: "Guanyinqiao Exit 6A", type: "คาเฟ่/จุดถ่ายภาพ", didi: "", zone: "Jiangbei District" },
-            { name: "Train from anime", details: "บริเวณอุโมงค์ลอดใต้ทางรถไฟ", tip: "แค่มุมถ่ายภาพ ถ้าต้องการตามรอย Tiktok", transport: "Fotuguan Exit 1", type: "คาเฟ่/จุดถ่ายภาพ", didi: "", zone: "" },
-            { name: "Dazhu", details: "เมืองประติมากรรมพระพุทธหินแกะสลักต้าจู", tip: "ต้องใช้เวลา 1 วันเต็ม", transport: "รถบัส/รถไฟความเร็วสูง", type: "วัฒนธรรม", didi: "", zone: "Dazu District" }
-        ];
-
-        const itineraryData = {
-            "day-1": {
-                title: "วันที่ 1: เดินทาง & ไอคอนกลางคืน",
-                items: [
-                    { time: "เช้า (เดินทาง)", details: "เดินทางด้วยไฟล์ท FD556 ถึง CKG (10:30 น.), นั่ง MRT เข้าเมือง" },
-                    { time: "บ่าย (Check-in & Yuzhong)", details: "Check-in โรงแรมสโตน, ทานมื้อเที่ยง, เดินเล่น <span class='attraction-link' data-name='Jiefangbei (People's Liberation Monument)'>อนุสาวรีย์ปลดแอก (Jiefangbei)</span>, ต่อด้วย <span class='attraction-link' data-name='Luohan Temple (Arhat Temple)'>วัดลั่วหาน (Luohan Temple)</span>" },
-                    { time: "เย็น/ค่ำ (ไฮไลท์)", details: "รอชมวิวที่ <span class='attraction-link' data-name='Hongyadong'>หงหยาต้ง (Hongyadong)</span> (Optional: <span class='attraction-link' data-name='Xiaobo Tea House'>Xiaobo Tea House</span>), เดินเล่น <span class='attraction-link' data-name='Qiansimen Bridge'>สะพานเชียนซือเหมิน (Qiansimen Bridge)</span>, ทานมื้อเย็น" }
-                ]
-            },
-            "day-2": {
-                title: "วันที่ 2: สำรวจ Yuzhong (ฝั่งตะวันตก)",
-                items: [
-                    { time: "เช้า (ตึกทะลุ)", details: "นั่ง MRT สาย 2 ไป <span class='attraction-link' data-name='Liziba'>สถานี Liziba</span> (รถไฟทะลุตึก)" },
-                    { time: "สาย (อาร์ต & วิว)", details: "ไปต่อที่ <span class='attraction-link' data-name='Eling Park (Testbed 2)'>Eling Park (Testbed 2)</span>" },
-                    { time: "บ่าย (ตรอกเก่า)", details: "เดินทางไป <span class='attraction-link' data-name='Shancheng Alley (Third Alley)'>ตรอกซานเฉิง (Shancheng Alley)</span>" },
-                    { time: "เย็น (ริมน้ำ & ตึกแฝด)", details: "แวะ <span class='attraction-link' data-name='Huguang Guild Hall'>หอประชุมหูกว่าง (Huguang Guild Hall)</span>, เดินเล่น <span class='attraction-link' data-name='Chaotianmen Square'>จัตุรัสเฉาเทียนเหมิน (Chaotianmen Square)</span> และชมตึก <span class='attraction-link' data-name='Raffles City'>Raffles City</span>" }
-                ]
-            },
-            "day-3": {
-                title: "วันที่ 3: ข้ามฝั่งไปหนานอาน (South Bank)",
-                items: [
-                    { time: "เช้า (กระเช้า)", details: "นั่ง <span class='attraction-link' data-name='Changjiang Cableway (Yangtze River Cableway)'>กระเช้าข้ามแม่น้ำแยงซี</span> (ควรไปเช้า)" },
-                    { time: "สาย (ถนนเก่า)", details: "เดินเที่ยว <span class='attraction-link' data-name='Longmenhao Old Street'>ถนนเก่าหลงเหมินห่าว (Longmenhao Old Street)</span>" },
-                    { time: "บ่าย (Optional)", details: "(Optional) แวะ <span class='attraction-link' data-name='Xuanhuachang Old Street'>ถนนเก่าซวนหัวฉ่าง</span> หรือเดินเล่น <span class='attraction-link' data-name='Nanbin Road'>ถนนหนานปิน</span>" },
-                    { time: "เย็น/ค่ำ (วิวพาโนรามา)", details: "นั่งแท็กซี่/DiDi ขึ้นเขาหนานซาน ไปที่ <span class='attraction-link' data-name='Nanshan Yikeshu Viewing Platform'>จุดชมวิวอี้เคอซู่ (Yikeshu Viewing Platform)</span>, ทานมื้อค่ำที่ <span class='attraction-link' data-name='Laowang Hotpot (Nanshan)'>Laowang Hotpot</span>" }
-                ]
-            },
-            "day-4": {
-                title: "วันที่ 4: ย่านศิลปะ & เมืองเก่า (Shapingba)",
-                items: [
-                    { time: "เช้า (เมืองโบราณ)", details: "นั่ง MRT ไป <span class='attraction-link' data-name='Ciqikou Old Town'>เมืองโบราณฉือชี่โข่ว (Ciqikou)</span>" },
-                    { time: "เที่ยง (ร้านหนังสือ)", details: "แวะ <span class='attraction-link' data-name='Zhongshuge Bookstore (Chongqing)'>ร้านหนังสือจงซูเก๋อ (Zhongshuge)</span>" },
-                    { time: "บ่าย (กราฟฟิตี้)", details: "เดินทางไปย่าน Huangjueping ชม <span class='attraction-link' data-name='Graffiti Street'>ถนนกราฟฟิตี้</span> และ <span class='attraction-link' data-name='Sichuan Fine Arts Institute (Huangjueping Campus)'>สถาบันวิจิตรศิลป์เสฉวน</span>" },
-                    { time: "เย็น (Optional)", details: "(Optional) ทานมื้อเย็นที่ <span class='attraction-link' data-name='Luozhong Hotpot (Gele Mountain)'>Luozhong Hotpot</span> หรือกลับมาทานในเมือง" }
-                ]
-            },
-            "day-5": {
-                title: "วันที่ 5: ย่านเจียงเป่ย (Jiangbei) & เก็บตก",
-                items: [
-                    { time: "เช้า (สวนและเจดีย์)", details: "ข้ามไปฝั่ง Jiangbei เที่ยว <span class='attraction-link' data-name='Hong'en Temple Forest Park'>สวนป่าหงเอิน (Hong'en Temple Forest Park)</span>" },
-                    { time: "บ่าย (ย่านช้อปปิ้ง)", details: "ไปย่าน Guanyinqiao ถ่ายรูปกับป้าย <span class='attraction-link' data-name='I'm in Chongqing big screen'>\"I'm in Chongqing\"</span>, เดินเล่น <span class='attraction-link' data-name='Beikang Culture Street'>ถนนวัฒนธรรมเป่ยคัง</span> (Optional: <span class='attraction-link' data-name='Swimin Cafe (Houbao Branch)'>Swimin Cafe</span>, <span class='attraction-link' data-name='The HALO'>The HALO</span>)" },
-                    { time: "เย็น (เก็บตก Yuzhong)", details: "กลับมาฝั่ง Yuzhong ลองขึ้น <span class='attraction-link' data-name='Crown Escalator'>บันไดเลื่อนคราวน์</span>, แวะถ่ายรูปตึกเก่า <span class='attraction-link' data-name='Bai Xiang Ju'>Bai Xiang Ju</span>, ซื้อของฝาก" }
-                ]
-            },
-            "day-6": {
-                title: "วันที่ 6: เดินทางกลับ",
-                items: [
-                    { time: "เช้า", details: "ทานมื้อเช้า, Check-out" },
-                    { time: "08:30 น.", details: "ออกเดินทางไปสนามบิน CKG" },
-                    { time: "11:30 น.", details: "เดินทางกลับด้วยไฟล์ท FD557" }
-                ]
-            }
-        };
-
-        let currentView = 'itinerary';
-        let currentDay = 'day-1';
-        let activeZoneFilter = 'all';
-        let activeTypeFilter = 'all';
-
-        document.addEventListener('DOMContentLoaded', () => {
-            setupEventListeners();
-            populateItinerary();
-            populateExploreFilters();
-            populateExploreGrid();
-            renderTypeChart();
-
-            showSection('itinerary-view');
-            showDay('day-1');
-        });
-
-        function setupEventListeners() {
-            document.getElementById('nav-itinerary').addEventListener('click', () => showSection('itinerary-view'));
-            document.getElementById('nav-explore').addEventListener('click', () => showSection('explore-view'));
-            document.getElementById('close-modal').addEventListener('click', closeModal);
-            document.getElementById('details-modal').addEventListener('click', (e) => {
-                if (e.target.id === 'details-modal') closeModal();
-            });
-
-            document.querySelectorAll('.day-button').forEach(button => {
-                button.addEventListener('click', () => showDay(button.dataset.day));
-            });
-
-            document.getElementById('zone-filters').addEventListener('click', (e) => {
-                if (e.target.classList.contains('filter-button')) {
-                    handleFilterClick(e.target, 'zone');
-                }
-            });
-
-            document.getElementById('type-filters').addEventListener('click', (e) => {
-                if (e.target.classList.contains('filter-button')) {
-                    handleFilterClick(e.target, 'type');
-                }
-            });
-
-            document.body.addEventListener('click', (e) => {
-                let target = e.target;
-                if (target.classList.contains('attraction-link')) {
-                    e.preventDefault();
-                    showModal(target.dataset.name);
-                } else if (target.closest('.place-card') && !target.classList.contains('attraction-link')) {
-                     e.preventDefault();
-                    const card = target.closest('.place-card');
-                    showModal(card.dataset.name);
-                }
-            });
-        }
-
-        function showSection(viewId) {
-            currentView = viewId;
-            document.getElementById('itinerary-view').classList.toggle('hidden', viewId !== 'itinerary-view');
-            document.getElementById('explore-view').classList.toggle('hidden', viewId !== 'explore-view');
-
-            document.getElementById('nav-itinerary').classList.toggle('active', viewId === 'itinerary-view');
-            document.getElementById('nav-explore').classList.toggle('active', viewId === 'explore-view');
-        }
-
-        function showDay(dayId) {
-            currentDay = dayId;
-            document.querySelectorAll('#itinerary-content > div').forEach(div => {
-                div.classList.toggle('hidden', div.id !== dayId);
-            });
-            document.querySelectorAll('.day-button').forEach(button => {
-                button.classList.toggle('active', button.dataset.day === dayId);
-            });
-        }
-
-        function populateItinerary() {
-            const container = document.getElementById('itinerary-content');
-            container.innerHTML = '';
-            for (const dayId in itineraryData) {
-                const dayData = itineraryData[dayId];
-                const dayDiv = document.createElement('div');
-                dayDiv.id = dayId;
-                dayDiv.classList.add('hidden', 'space-y-4');
-                
-                let itemsHtml = dayData.items.map(item => `
-                    <div class="border-l-4 border-teal-600 pl-4">
-                        <h4 class="text-lg font-semibold text-gray-800">${item.time}</h4>
-                        <p class="text-gray-600">${item.details}</p>
-                    </div>
-                `).join('');
-
-                dayDiv.innerHTML = `
-                    <h3 class="text-2xl font-bold text-gray-800 mb-4">${dayData.title}</h3>
-                    ${itemsHtml}
-                `;
-                container.appendChild(dayDiv);
-            }
-        }
-
-        function populateExploreFilters() {
-            const zones = [...new Set(allPlacesData.map(p => p.zone).filter(Boolean))];
-            const types = [...new Set(allPlacesData.map(p => p.type).filter(Boolean))];
-            
-            const zoneContainer = document.getElementById('zone-filters');
-            zones.forEach(zone => {
-                zoneContainer.innerHTML += `<button class="filter-button border border-gray-300 py-1 px-3 rounded-full text-sm" data-filter-group="zone" data-filter="${zone}">${zone}</button>`;
-            });
-
-            const typeContainer = document.getElementById('type-filters');
-            types.forEach(type => {
-                typeContainer.innerHTML += `<button class="filter-button border border-gray-300 py-1 px-3 rounded-full text-sm" data-filter-group="type" data-filter="${type}">${type}</button>`;
-            });
-        }
-
-        function populateExploreGrid() {
-            const grid = document.getElementById('places-grid');
-            grid.innerHTML = '';
-            allPlacesData.forEach(place => {
-                const card = document.createElement('div');
-                card.className = 'place-card bg-white rounded-lg shadow-sm p-4 cursor-pointer hover:shadow-md transition';
-                card.dataset.name = place.name;
-                card.dataset.zone = place.zone || 'unknown';
-                card.dataset.type = place.type || 'unknown';
-                card.innerHTML = `
-                    <h4 class="text-xl font-bold text-teal-700 mb-2">${place.name}</h4>
-                    <p class="text-gray-600 text-sm mb-2">${place.details.substring(0, 100)}${place.details.length > 100 ? '...' : ''}</p>
-                    <div class="flex flex-wrap gap-2 text-xs">
-                        <span class="bg-teal-100 text-teal-800 py-0.5 px-2 rounded-full">${place.zone || 'N/A'}</span>
-                        <span class="bg-gray-100 text-gray-800 py-0.5 px-2 rounded-full">${place.type || 'N/A'}</span>
-                    </div>
-                `;
-                grid.appendChild(card);
-            });
-        }
-
-        function handleFilterClick(button, group) {
-            const filterValue = button.dataset.filter;
-            if (group === 'zone') {
-                activeZoneFilter = filterValue;
-            } else if (group === 'type') {
-                activeTypeFilter = filterValue;
-            }
-
-            document.querySelectorAll(`.filter-button[data-filter-group="${group}"]`).forEach(btn => {
-                btn.classList.remove('active');
-            });
-            button.classList.add('active');
-            
-            filterPlaces();
-        }
-
-        function filterPlaces() {
-            const cards = document.querySelectorAll('.place-card');
-            cards.forEach(card => {
-                const showZone = activeZoneFilter === 'all' || card.dataset.zone === activeZoneFilter;
-                const showType = activeTypeFilter === 'all' || card.dataset.type === activeTypeFilter;
-                card.classList.toggle('hidden', !(showZone && showType));
-            });
-        }
-
-        function showModal(placeName) {
-            const place = allPlacesData.find(p => p.name === placeName);
-            if (!place) return;
-
-            document.getElementById('modal-title').textContent = place.name;
-            document.getElementById('modal-details').textContent = place.details || 'N/A';
-            document.getElementById('modal-tip').textContent = place.tip || 'N/A';
-            document.getElementById('modal-transport').textContent = place.transport || 'N/A';
-            document.getElementById('modal-type').textContent = place.type || 'N/A';
-            document.getElementById('modal-didi').textContent = place.didi || 'N/A';
-            
-            document.getElementById('details-modal').classList.remove('hidden');
-        }
-
-        function closeModal() {
-            document.getElementById('details-modal').classList.add('hidden');
-        }
-
-        function wrapChartLabels(label, maxWidth) {
-            const words = label.split(' ');
-            let lines = [];
-            let currentLine = '';
-            words.forEach(word => {
-                if ((currentLine + word).length <= maxWidth) {
-                    currentLine += (currentLine === '' ? '' : ' ') + word;
-                } else {
-                    lines.push(currentLine);
-                    currentLine = word;
-                }
-            });
-            lines.push(currentLine);
-            return lines;
-        }
-
-        function renderTypeChart() {
-            const typeCounts = allPlacesData.reduce((acc, place) => {
-                const type = place.type || 'Unknown';
-                acc[type] = (acc[type] || 0) + 1;
-                return acc;
-            }, {});
-
-            const ctx = document.getElementById('typeChart').getContext('2d');
-            new Chart(ctx, {
-                type: 'doughnut',
-                data: {
-                    labels: Object.keys(typeCounts),
-                    datasets: [{
-                        label: 'จำนวนสถานที่',
-                        data: Object.values(typeCounts),
-                        backgroundColor: [
-                            '#14b8a6', '#0d9488', '#0f766e', '#042f2e',
-                            '#a7f3d0', '#6ee7b7', '#34d399', '#10b981',
-                            '#fde68a', '#fcd34d', '#fbbF24', '#f59e0b',
-                            '#7dd3fc', '#38bdf8', '#0ea5e9', '#0284c7'
-                        ],
-                        borderWidth: 1
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            position: 'bottom',
-                            labels: {
-                                padding: 15,
-                                boxWidth: 12,
-                                font: {
-                                    family: "'Sarabun', sans-serif",
-                                    size: 12
-                                }
-                            }
-                        },
-                        tooltip: {
-                            callbacks: {
-                                label: function(context) {
-                                    let label = context.label || '';
-                                    if (label) {
-                                        label += ': ';
-                                    }
-                                    if (context.parsed !== null) {
-                                        label += context.parsed + ' แห่ง';
-                                    }
-                                    return label;
-                                },
-                                title: (tooltipItems) => wrapChartLabels(tooltipItems[0].label, 16)
-                            },
-                            bodyFont: { family: "'Sarabun', sans-serif" },
-                            titleFont: { family: "'Sarabun', sans-serif" }
-                        }
-                    }
-                }
-            });
-        }
-
-    </script>
 </body>
 </html>
+
 
