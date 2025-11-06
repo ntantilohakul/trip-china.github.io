@@ -3,472 +3,446 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>แผนการเดินทางฉงชิ่ง 6 วัน 5 คืน (ฉบับละเอียด)</title>
+    <title>แผนการเดินทางฉงชิ่ง 6 วัน 5 คืน (2025)</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <!-- Chosen Palette: Warm Neutrals (White/Gray-50) with Blue accents and Green (Must) / Blue (Try) -->
-    <!-- Application Structure Plan: ยึดตามโครงสร้าง Single-Page Scroll (หน้าเดียว) ตามคำขอล่าสุดของผู้ใช้ โดยเพิ่มความ 'ละเอียด' (detail) เข้าไปในเนื้อหา -->
-    <!-- Visualization & Content Choices: 
-        [Trip Itinerary: Report Info (กิจกรรมรายวัน) -> Goal (Organize, Inform, Detail) -> Viz (Vertical content sections, ใช้การ์ด HTML/Tailwind แยกแต่ละกิจกรรม) -> Interaction (Scrolling) -> Justification (ตอบสนองความต้องการของผู้ใช้ที่อยากเห็นทุกอย่างในหน้าเดียว และเพิ่มข้อมูลการเดินทาง 'ระหว่าง' สถานที่ และ 'จากโรงแรม' ที่ระบุมา)]
-        [Hotel Info: Report Info (ชื่อ, ที่อยู่, เบอร์โทร) -> Goal (Inform, Centralize) -> Viz (การ์ด HTML/Tailwind ในหน้า 'Overview') -> Interaction (None) -> Justification (เพิ่มข้อมูลสำคัญที่ผู้ใช้เพิ่งให้มา)]
-        [Activity Tags: Report Info (แท็ก Must/Try/If) -> Goal (Inform, Compare) -> Viz (ใช้ "pills" หรือป้ายกำกับ HTML/Tailwind ที่มีสีชัดเจน) -> Interaction (None, visual cue) -> Justification (แยกแยะความสำคัญของกิจกรรมได้เร็ว)] 
-        [Trip Summary Chart: Report Info (นับจำนวนแท็ก 'Must' vs 'Try' vs 'If' จากไฟล์ต้นฉบับ) -> Goal (Inform, Summarize) -> Viz (Donut Chart) -> Interaction (Hover for tooltip) -> Justification (สรุปภาพรวม "ความเข้มข้น" ของทริป) -> Library (Chart.js/Canvas)] 
-        [Flight/Tips: Report Info (เที่ยวบิน, คำแนะนำ) -> Goal (Inform) -> Viz (การ์ด HTML/Tailwind ในหน้า 'Overview') -> Interaction (None) -> Justification (รวมข้อมูลสำคัญไว้ในที่เดียว)]
-    -->
-    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Sarabun:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700&display=swap');
         body {
-            font-family: 'Sarabun', sans-serif;
-            background-color: #f9fafb; /* Gray 50 */
+            font-family: 'Sarabun', 'Inter', sans-serif;
+            background-color: #f4f7f6;
+            scroll-behavior: smooth; /* Enables smooth scrolling for the whole page */
         }
-        .chart-container {
+        .timeline-item {
             position: relative;
-            width: 100%;
-            max-width: 400px;
-            margin-left: auto;
-            margin-right: auto;
-            height: 300px;
-            max-height: 400px;
+            padding-left: 2.5rem; /* 40px */
+            padding-bottom: 1.5rem; /* 24px */
+            border-left: 2px solid #e5e7eb; /* gray-200 */
         }
-        .content-section {
-            margin-bottom: 2.5rem; /* 40px */
-            padding-top: 2.5rem; /* 40px */
-            border-top: 2px solid #e5e7eb; /* border-gray-200 */
+        .timeline-dot {
+            position: absolute;
+            left: -0.5rem; /* -8px */
+            top: 0.25rem; /* 4px */
+            width: 1rem; /* 16px */
+            height: 1rem; /* 16px */
+            border-radius: 9999px; /* full */
+            background-color: #fff;
+            border: 4px solid #4f46e5; /* indigo-600 */
         }
-        .content-section:first-child {
-            border-top: none;
-            padding-top: 0;
+        .timeline-item:last-child {
+            border-left-color: transparent;
+            padding-bottom: 0;
         }
-        .tag-must {
-            background-color: #dcfce7; /* green-100 */
-            color: #166534; /* green-800 */
-            font-size: 0.8rem;
-        }
-        .tag-try {
-            background-color: #dbeafe; /* blue-100 */
-            color: #1e40af; /* blue-800 */
-            font-size: 0.8rem;
-        }
-        .tag-if {
-            background-color: #fef3c7; /* yellow-100 */
-            color: #92400e; /* yellow-800 */
-            font-size: 0.8rem;
+        /* Style for custom markers */
+        .timeline-marker {
+            font-size: 1.25rem; /* text-xl */
+            line-height: 1;
+            position: absolute;
+            left: -0.75rem; /* -12px */
+            top: 0.125rem; /* 2px */
+            width: 1.5rem; /* 24px */
+            height: 1.5rem; /* 24px */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: #4f46e5;
+            color: white;
+            border-radius: 9999px;
+            z-index: 10;
         }
     </style>
 </head>
-<body class="text-gray-800">
+<body class="antialiased text-gray-800">
 
-    <div class="container mx-auto max-w-6xl p-4 md:p-8">
+    <div class="container mx-auto p-4 md:p-8 max-w-6xl">
+        
+        <!-- HEADER -->
         <header class="text-center mb-10">
             <h1 class="text-3xl md:text-4xl font-bold text-gray-900">แผนการเดินทางฉงชิ่ง 6 วัน 5 คืน (ฉบับละเอียด)</h1>
-            <p class="text-lg text-gray-600 mt-2">21 พ.ย. - 26 พ.ย. 2024</p>
+            <p class="text-lg text-gray-600 mt-2">21 พ.ย. - 26 พ.ย. 2025</p>
         </header>
 
         <main>
-            <!-- SECTION: OVERVIEW -->
-            <div id="overview-section" class="content-section space-y-6">
-                <header class="text-center mb-6">
-                    <h2 class="text-3xl font-bold text-gray-900">ภาพรวมทริป</h2>
-                    <p class="text-center text-gray-700 mt-2">สรุปข้อมูลสำคัญ: ที่พัก, เที่ยวบิน, สรุปกิจกรรม และคำแนะนำ</p>
-                </header>
+            <!-- FLIGHT INFO & QUICK LINKS -->
+            <section class="mb-8 p-6 bg-indigo-50 rounded-lg shadow-sm">
+                <h2 class="text-2xl font-bold text-indigo-800 mb-4 text-center">ข้อมูลสำคัญ & ลิงก์ด่วน</h2>
                 
-                <div class="bg-white p-6 rounded-lg shadow-lg border border-blue-200">
-                    <h3 class="text-2xl font-semibold text-blue-800 mb-4">🏨 ข้อมูลที่พัก (Hotel Info)</h3>
-                    <p class="text-xl font-bold">โรงแรมสโตน (顽石酒店 - Wánshí Jiǔdiàn)</p>
-                    <p class="text-lg font-semibold">สาขา: (解放碑来福士店 - Jiěfàngbēi Láifúshì Diàn)</p>
-                    <hr class="my-3">
-                    <p class="text-gray-700"><strong>ที่อยู่ (จีน):</strong> 渝中区新华路1号8楼 (Yúzhōng Qū Xīnhuá Lù 1 Hào 8 Lóu)</p>
-                    <p class="text-gray-700"><strong>ที่อยู่ (ไทย):</strong> 8th Floor, No. 1 Xinhua Road, เขตหยูซง, ฉงชิ่ง</p>
-                    <p class="text-gray-700 mt-2"><strong>เบอร์โทร:</strong> +86-23-63720777, +86-19111312908</p>
-                    <p class="text-sm text-blue-600 mt-2">💡 <strong>Tip:</strong> โรงแรมนี้อยู่ใจกลางเมือง (Yuzhong) ใกล้สถานี Xiaoshizi (小什字) และเดินไป Jiefangbei, Hongya Cave, Chaotianmen ได้ง่ายมาก</p>
-                </div>
-
+                <!-- Flight Info -->
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div class="bg-white p-6 rounded-lg shadow-md border border-gray-200">
                         <h3 class="text-xl font-semibold text-green-700 mb-3">✈️ ขาไป (Arrival)</h3>
-                        <p><strong>วันที่:</strong> 21 พ.ย. (พฤหัสบดี)</p>
+                        <p><strong>วันที่:</strong> 21 พ.ย. (ศุกร์)</p>
                         <p><strong>เที่ยวบิน:</strong> <span class="font-bold">FD556</span></p>
-                        <p><strong>เวลา:</strong> <span class="font-bold">06:15 (DMK) - 10:20 (CKG)</span></p>
+                        <p><strong>เวลา:</strong> 06:20 (DMK) - 10:20 (CKG)</p>
+                        <p><strong>สนามบิน:</strong> Chongqing Jiangbei (CKG) - T3</p>
                     </div>
                     <div class="bg-white p-6 rounded-lg shadow-md border border-gray-200">
                         <h3 class="text-xl font-semibold text-red-700 mb-3">✈️ ขากลับ (Departure)</h3>
-                        <p><strong>วันที่:</strong> 26 พ.ย. (อังคาร)</p>
+                        <p><strong>วันที่:</strong> 26 พ.ย. (พุธ)</p>
                         <p><strong>เที่ยวบิน:</strong> <span class="font-bold">FD557</span></p>
-                        <p><strong>เวลา:</strong> <span class="font-bold">11:20 (CKG) - 13:35 (DMK)</span></p>
+                        <p><strong>เวลา:</strong> 11:20 (CKG) - 13:40 (DMK)</p>
+                        <p><strong>คำแนะนำ:</strong> ถึงสนามบินอย่างน้อย 08:30 น.</p>
                     </div>
                 </div>
 
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
-                    <div class="bg-white p-6 rounded-lg shadow-md border border-gray-200">
-                        <h3 class="text-xl font-semibold text-gray-800 mb-4 text-center">ภาพรวมกิจกรรม</h3>
-                        <div class="chart-container">
-                            <canvas id="trip-vibe-chart"></canvas>
-                        </div>
-                    </div>
-                    <div class="bg-white p-6 rounded-lg shadow-md border border-gray-200">
-                        <h3 class="text-xl font-semibold text-amber-700 mb-3">🍴 อาหารน่าลอง (Must-Try)</h3>
-                        <ul class="list-disc list-inside space-y-2 text-gray-700">
-                            <li><strong>หม้อไฟฉงชิ่ง (重庆火锅):</strong> ห้ามพลาดความเผ็ดชา (Mala) ต้นตำรับ</li>
-                            <li><strong>บะหมี่ฉงชิ่ง (重庆小面):</strong> อาหารเช้ายอดนิยม รสชาติจัดจ้าน</li>
-                            <li><strong>ซวนล่าเฝิ่น (酸辣粉):</strong> วุ้นเส้นในน้ำซุปรสเปรี้ยวเผ็ด</li>
-                        </ul>
+                <!-- Quick Links -->
+                <div class="mt-6 text-center">
+                    <h3 class="text-lg font-semibold text-indigo-700 mb-3">ลิงก์นำทาง (กดที่วันเพื่อเลื่อน)</h3>
+                    <div class="flex flex-wrap justify-center gap-2">
+                        <a href="#day1" class="px-4 py-2 bg-indigo-100 text-indigo-800 rounded-full font-medium hover:bg-indigo-200 transition">วันที่ 1</a>
+                        <a href="#day2" class="px-4 py-2 bg-indigo-100 text-indigo-800 rounded-full font-medium hover:bg-indigo-200 transition">วันที่ 2</a>
+                        <a href="#day3" class="px-4 py-2 bg-indigo-100 text-indigo-800 rounded-full font-medium hover:bg-indigo-200 transition">วันที่ 3</a>
+                        <a href="#day4" class="px-4 py-2 bg-indigo-100 text-indigo-800 rounded-full font-medium hover:bg-indigo-200 transition">วันที่ 4</a>
+                        <a href="#day5" class="px-4 py-2 bg-indigo-100 text-indigo-800 rounded-full font-medium hover:bg-indigo-200 transition">วันที่ 5</a>
+                        <a href="#day6" class="px-4 py-2 bg-indigo-100 text-indigo-800 rounded-full font-medium hover:bg-indigo-200 transition">วันที่ 6</a>
                     </div>
                 </div>
-                
-                <div class="bg-white p-6 rounded-lg shadow-md border border-gray-200">
-                    <h3 class="text-xl font-semibold text-indigo-700 mb-3">💡 ข้อแนะนำเพิ่มเติม</h3>
-                    <ul class="list-disc list-inside space-y-2 text-gray-700">
-                        <li><strong>การเดินทาง:</strong> ฉงชิ่งเป็นเมืองเนินเขา (山城) ต้องเดินขึ้นลงบันไดเยอะมาก เตรียมรองเท้าที่เดินสบายที่สุด</li>
-                        <li><strong>การจ่ายเงิน:</strong> เตรียม Alipay หรือ WeChat Pay ให้พร้อม ร้านค้าส่วนใหญ่ใช้การสแกนจ่าย</li>
-                        <li><strong>อากาศ:</strong> ปลาย พ.ย. อากาศเริ่มเย็น/หนาว เตรียมเสื้อกันหนาวและเสื้อผ้าที่ให้ความอบอุ่นไปด้วย</li>
-                    </ul>
-                </div>
+            </section>
+            
+            <!-- TABS NAVIGATION (REMOVED) -->
+            <!-- <nav class="sticky top-0 bg-white shadow-md z-20 mb-8 rounded-lg overflow-hidden"> ... </nav> -->
+
+            <!-- TABS CONTENT (NOW DISPLAYED AS A SINGLE PAGE) -->
+            <div class="space-y-12">
+
+                <!-- SECTION: DAY 1 -->
+                <section class="bg-white p-6 md:p-8 rounded-lg shadow-xl space-y-6">
+                    <header class="text-center" id="day1">
+                        <h2 class="text-3xl font-bold text-gray-900">🗓️ วันที่ 1: 21 พ.ย. (ศุกร์)</h2>
+                        <p class="text-xl text-indigo-600 mt-1">ธีม: เมืองโบราณ & วิวกลางคืนสุดอลังการ</p>
+                    </header>
+                    
+                    <div class="timeline-item">
+                        <span class="timeline-marker">✈️</span>
+                        <h3 class="text-lg font-semibold text-gray-800 mb-1">10:20 - 12:30: เดินทางถึงฉงชิ่ง (CKG)</h3>
+                        <p class="text-gray-600">ผ่าน ตม., รับกระเป๋า, ซื้อซิมการ์ด (ถ้ายังไม่มี), ซื้อตั๋วรถไฟฟ้ารายเที่ยว (หรือใช้ Alipay/WeChat Pay)</p>
+                        <p class="text-gray-600 mt-1"><strong>การเดินทางเข้าเมือง:</strong> นั่ง <span class="font-semibold text-purple-600">Airport Express Line 10 (สายสีม่วง)</span> มาลงสถานี Tuanjiecun (团结村) เพื่อเปลี่ยนสาย</p>
+                    </div>
+
+                    <div class="timeline-item">
+                        <span class="timeline-marker">🏨</span>
+                        <h3 class="text-lg font-semibold text-gray-800 mb-1">12:30 - 14:00: เดินทางไปโรงแรม & Check-in</h3>
+                        <p class="text-gray-600"><strong>การเดินทาง (ต่อ):</strong> จาก Tuanjiecun (团结村) นั่ง <span class="font-semibold text-blue-600">Line 6 (สายสีฟ้า)</span> ไปลงสถานี Xiaoshizi (小什字) (ทางออกที่ใกล้ที่สุดน่าจะประมาณ Exit 5/6/7 ให้เช็คกับโรงแรมอีกที)</p>
+                        <p class="text-gray-600 mt-1"><strong>โรงแรม:</strong> โรงแรมสโตน (顽石酒店) (8th Floor, No. 1 Xinhua Road, Yuzhong District) ทำการ Check-in และเก็บสัมภาระ</p>
+                    </div>
+
+                    <div class="timeline-item">
+                        <span class="timeline-marker">🍜</span>
+                        <h3 class="text-lg font-semibold text-gray-800 mb-1">14:00 - 15:00: มื้อกลางวัน</h3>
+                        <p class="text-gray-600">หาอาหารกลางวันง่ายๆ ทานแถวที่พัก หรือย่าน Jiefangbei</p>
+                        <p class="text-gray-600 mt-1"><strong>เมนูแนะนำ:</strong> บะหมี่ฉงชิ่ง (Chongqing Noodles - 小面)</p>
+                    </div>
+
+                    <div class="timeline-item">
+                        <span class="timeline-marker">🏛️</span>
+                        <h3 class="text-lg font-semibold text-gray-800 mb-1">15:00 - 17:30: เมืองโบราณ Ciqikou (磁器口)</h3>
+                        <p class="text-gray-600">สัมผัสบรรยากาศเมืองเก่าแก่ริมแม่น้ำเจียหลิง เดินชมสถาปัตยกรรมโบราณ ชิมขนม และของกินเล่น</p>
+                        <p class="text-gray-600 mt-1"><strong>การเดินทาง:</strong> <span class="font-semibold text-blue-600">Line 6 (สายสีฟ้า)</span> จาก Xiaoshizi (小什字) ไป <span class="font-semibold text-red-600">Line 1 (สายสีแดง)</span> ที่สถานี Jiaochangkou (较场口) หรือ Lianglukou (两路口) แล้วนั่งยาวไปลงสถานี Ciqikou (磁器口) Exit 1</p>
+                    </div>
+
+                    <div class="timeline-item">
+                        <span class="timeline-marker">🌉</span>
+                        <h3 class="text-lg font-semibold text-gray-800 mb-1">17:30 - 19:00: (Optional) สะพาน Shibanpo Yangtze (石板坡长江大桥)</h3>
+                        <p class="text-gray-600">หากมีเวลาและแรงเหลือ เดินทางไปดูสะพานที่ "ซับซ้อน" ที่สุดแห่งหนึ่งของจีน เป็นจุดถ่ายรูป 8D Magic City ยอดนิยม</p>
+                        <p class="text-gray-600 mt-1"><strong>การเดินทาง:</strong> จาก Ciqikou นั่ง <span class="font-semibold text-red-600">Line 1</span> กลับมา <span class="font-semibold text-green-600">Line 2 (สายสีเขียว)</span> ที่ Daping (大坪) แล้วไปลงสถานี Huanghuayuan (黄花园) หรือ Liziba (李子坝) เพื่อดูวิว (หรือนั่งแท็กซี่/DiDi จะสะดวกกว่า)</p>
+                    </div>
+
+                    <div class="timeline-item">
+                        <span class="timeline-marker">🏙️</span>
+                        <h3 class="text-lg font-semibold text-gray-800 mb-1">19:00 - 21:00: หงหยาต้ง (Hongyadong - 洪崖洞)</h3>
+                        <p class="text-gray-600">ไฮไลท์สำคัญ! เดินทางกลับมาที่พัก (ย่าน Xiaoshizi) เพื่อเดินไป Hongyadong ชมแสงสียามค่ำคืนที่สวยงามราวกับในอนิเมะ</p>
+                        <p class="text-gray-600 mt-1"><strong>จุดถ่ายรูป:</strong> 1. บนสะพาน Qiansimen (千厮门大桥) 2. ถนนฝั่งตรงข้าม (Jiangbeizui)</p>
+                        <p class="text-gray-600 mt-1"><strong>การเดินทาง:</strong> สามารถเดินจาก Xiaoshizi หรือ Jiefangbei ได้สบายๆ</p>
+                    </div>
+
+                    <div class="timeline-item">
+                        <span class="timeline-marker">🍲</span>
+                        <h3 class="text-lg font-semibold text-gray-800 mb-1">21:00 เป็นต้นไป: มื้อเย็น (หม้อไฟ!) และพักผ่อน</h3>
+                        <p class="text-gray-600">ได้เวลาลิ้มรสหม้อไฟฉงชิ่ง (Hotpot) แท้ๆ! เลือกร้านเด็ดแถว Hongyadong หรือ Jiefangbei</p>
+                        <p class="text-gray-600 mt-1"><strong>คำแนะนำ:</strong> เลือกระดับความเผ็ดที่ไหว (微辣 - เผ็ดน้อย) และลองซุปมะเขือเทศหรือไม่เผ็ด (鸳鸯锅 - หม้อสองฝั่ง)</p>
+                    </div>
+                </section>
+
+                <!-- SECTION: DAY 2 -->
+                <section class="bg-white p-6 md:p-8 rounded-lg shadow-xl space-y-6">
+                    <header class="text-center" id="day2">
+                        <h2 class="text-3xl font-bold text-gray-900">🗓️ วันที่ 2: 22 พ.ย. (เสาร์)</h2>
+                        <p class="text-xl text-indigo-600 mt-1">ธีม: ตะลุย Yuzhong (ฝั่งตะวันตก) & จุดชมวิว 3 มิติ</p>
+                    </header>
+
+                    <div class="timeline-item">
+                        <span class="timeline-marker">🌄</span>
+                        <h3 class="text-lg font-semibold text-gray-800 mb-1">09:00 - 11:30: E'ling Park (鵝嶺公園)</h3>
+                        <p class="text-gray-600">เริ่มต้นวันที่จุดชมวิวที่สูงที่สุดในเขต Yuzhong (ตัวเมืองเก่า) ขึ้นหอคอย Kansheng Tower (瞰胜楼) เพื่อชมวิว 360 องศาของแม่น้ำสองสาย (Yangtze & Jialing) และตึกระฟ้า</p>
+                        <p class="text-gray-600 mt-1"><strong>การเดินทาง:</strong> <span class="font-semibold text-red-600">Line 1 (สายสีแดง)</span> จาก Xiaoshizi (小什字) ไปลงสถานี E'ling (鹅岭) Exit 1</p>
+                    </div>
+
+                    <div class="timeline-item">
+                        <span class="timeline-marker">🎨</span>
+                        <h3 class="text-lg font-semibold text-gray-800 mb-1">11:30 - 13:00: E'ling Testbed 2 (贰厂文创公园)</h3>
+                        <p class="text-gray-600">เดินจาก E'ling Park มาไม่ไกล (ประมาณ 10-15 นาที) ที่นี่เป็นโรงพิมพ์เก่าที่รีโนเวทเป็นแหล่งรวมคาเฟ่เก๋ๆ, ร้านค้าดีไซน์, และ Art Gallery เป็นจุดที่วัยรุ่นนิยมมาถ่ายรูป</p>
+                        <p class="text-gray-600 mt-1"><strong>ไฮไลท์:</strong> จุดชมวิวบนดาดฟ้า (วิวเดียวกับในหนัง "Better Days")</p>
+                    </div>
+
+                    <div class="timeline-item">
+                        <span class="timeline-marker">🍜</span>
+                        <h3 class="text-lg font-semibold text-gray-800 mb-1">13:00 - 14:00: มื้อกลางวันแถว Testbed 2</h3>
+                        <p class="text-gray-600">ทานอาหารกลางวันในร้านอาหารหรือคาเฟ่บรรยากาศดีในโครงการ Testbed 2</p>
+                    </div>
+
+                    <div class="timeline-item">
+                        <span class="timeline-marker">🚈</span>
+                        <h3 class="text-lg font-semibold text-gray-800 mb-1">14:30 - 15:30: สถานี Liziba (李子坝)</h3>
+                        <p class="text-gray-600">ชมความมหัศจรรย์ 8D ของฉงชิ่ง! ดูรถไฟฟ้า <span class="font-semibold text-green-600">Line 2 (สายสีเขียว)</span> วิ่งทะลุผ่านตึกอพาร์ตเมนต์</p>
+                        <p class="text-gray-600 mt-1"><strong>การเดินทาง:</strong> <span class="font-semibold text-red-600">Line 1</span> จาก E'ling ไป Daping (大坪) เปลี่ยนเป็น <span class="font-semibold text-green-600">Line 2</span> แล้วนั่งไปลง Liziba (李子坝) หรือนั่งแท็กซี่จาก Testbed 2 มาเลย (สะดวกมาก)</p>
+                        <p class="text-gray-600 mt-1"><strong>จุดชมวิว:</strong> มีชานชาลาชมวิวโดยเฉพาะที่ชั้นล่างของสถานี</p>
+                    </div>
+
+                    <div class="timeline-item">
+                        <span class="timeline-marker">🚠</span>
+                        <h3 class="text-lg font-semibold text-gray-800 mb-1">16:00 - 17:30: กระเช้าข้ามแม่น้ำแยงซี (Yangtze River Cableway)</h3>
+                        <p class="text-gray-600">นั่งกระเช้าข้ามแม่น้ำแยงซีเกียง ชมวิวเมืองจากมุมสูง (อาจต้องรอคิวนาน โดยเฉพาะวันหยุด)</p>
+                        <p class="text-gray-600 mt-1"><strong>การเดินทาง:</strong> <span class="font-semibold text-green-600">Line 2</span> จาก Liziba ไป Jiaochangkou (较场口) แล้วเดินต่อ หรือนั่ง <span class="font-semibold text-red-600">Line 1</span> ไป Xiaoshizi (小什字) Exit 5C แล้วเดินไปสถานีกระเช้า (ใกล้ที่พัก)</p>
+                        <p class="text-gray-600 mt-1"><strong>คำแนะนำ:</strong> ซื้อตั๋วออนไลน์ล่วงหน้าถ้าทำได้ (เที่ยวเดียว 20 CNY, ไป-กลับ 30 CNY) แนะนำนั่งเที่ยวเดียวไปฝั่ง Nan'an</p>
+                    </div>
+
+                    <div class="timeline-item">
+                        <span class="timeline-marker">🌟</span>
+                        <h3 class="text-lg font-semibold text-gray-800 mb-1">18:00 - 21:00: ย่าน Nanbin Road (南滨路) & มื้อเย็น</h3>
+                        <p class="text-gray-600">หลังจากลงกระเช้าที่ฝั่ง Nan'an เดินเล่นเลียบแม่น้ำที่ Nanbin Road ชมวิวตึกระฟ้าฝั่ง Yuzhong (วิวตรงข้าม Hongyadong และ Raffles City) และทานอาหารเย็นที่นี่</p>
+                        <p class="text-gray-600 mt-1"><strong>ร้านอาหาร:</strong> มีร้านอาหารหรูหราและร้านหม้อไฟวิวแม่น้ำมากมาย</p>
+                    </div>
+
+                    <div class="timeline-item">
+                        <span class="timeline-marker">✨</span>
+                        <h3 class="text-lg font-semibold text-gray-800 mb-1">20:30: (ไฮไลท์!) ชมโชว์โดรน (Nanbin Road Drone Show)</h3>
+                        <p class="text-gray-600"><strong>(เช็คตารางอีกครั้งใกล้ๆ วันเดินทาง)</strong> ปกติโชว์โดรนจะมีทุกคืนวันเสาร์ บริเวณ Nanbin Road ใกล้กับ Changjiahui (长嘉汇) Shopping Park</p>
+                        <p class="text-gray-600 mt-1"><strong>จุดชม:</strong> บริเวณลานกว้างใกล้ Changjiahui หรือ Danzishi Old Street (弹子石老街) จะเห็นชัดที่สุด</p>
+                    </div>
+
+                    <div class="timeline-item">
+                        <span class="timeline-marker">🏨</span>
+                        <h3 class="text-lg font-semibold text-gray-800 mb-1">22:00: กลับที่พัก</h3>
+                        <p class="text-gray-600">นั่งแท็กซี่/DiDi หรือนั่งรถไฟฟ้า <span class="font-semibold text-yellow-500">Loop Line (สาย 0)</span> จากสถานี Danzishi (弹子石) เพื่อกลับไปยังฝั่ง Yuzhong</p>
+                    </div>
+                </section>
+
+                <!-- SECTION: DAY 3 -->
+                <section class="bg-white p-6 md:p-8 rounded-lg shadow-xl space-y-6">
+                    <header class="text-center" id="day3">
+                        <h2 class="text-3xl font-bold text-gray-900">🗓️ วันที่ 3: 23 พ.ย. (อาทิตย์)</h2>
+                        <p class="text-xl text-indigo-600 mt-1">ธีม: มรดกโลกอู่หลง (Wulong Day Trip)</p>
+                    </header>
+
+                    <div class="timeline-item">
+                        <span class="timeline-marker">🌄</span>
+                        <h3 class="text-lg font-semibold text-gray-800 mb-1">07:00 - 10:30: เดินทางไปอู่หลง (Wulong)</h3>
+                        <p class="text-gray-600">วันนี้ต้องตื่นเช้ามาก! ซื้อทัวร์ Day Trip (สะดวกที่สุด) หรือเดินทางด้วยตัวเอง</p>
+                        <p class="text-gray-600 mt-1"><strong>วิธีเดินทาง (เอง):</strong>
+                            1. นั่งแท็กซี่ไปสถานี Chongqing North (重庆北站).
+                            2. นั่งรถไฟความเร็วสูง (G-Train/D-Train) ไปลงสถานี Wulong (武隆站) (ใช้เวลาประมาณ 1.5 - 2 ชม.)
+                            3. จากสถานี Wulong นั่งแท็กซี่/รถบัสต่อไปยัง Wulong Karst Tourist Center (武隆喀斯特旅游中心)
+                        </p>
+                        <p class="text-yellow-600 bg-yellow-50 p-3 rounded-md mt-2"><strong>คำแนะนำ:</strong> การซื้อ Day Tour จาก Klook/KKday หรือจองทัวร์ท้องถิ่น จะประหยัดเวลาและสะดวกกว่ามาก เพราะรวมค่าเข้าและรถรับ-ส่งแล้ว</p>
+                    </div>
+
+                    <div class="timeline-item">
+                        <span class="timeline-marker">🏞️</span>
+                        <h3 class="text-lg font-semibold text-gray-800 mb-1">10:30 - 14:00: อุทยานหลุมฟ้า 3 สะพานสวรรค์ (Three Natural Bridges - 天生三桥)</h3>
+                        <p class="text-gray-600">ไฮไลท์ของอู่หลง มรดกโลก UNESCO เดินชมความอลังการของหลุมยุบธรรมชาติขนาดใหญ่และสะพานหิน 3 แห่ง</p>
+                        <p class="text-gray-600 mt-1"><strong>จุดสำคัญ:</strong> โรงเตี๊ยมโบราณ (จุดถ่ายทำ Transformers), ลงลิฟต์แก้ว, เดินเทรลชมธรรมชาติ</p>
+                        <p class="text-gray-600 mt-1"><strong>หมายเหตุ:</strong> ต้องนั่งรถบัสของอุทยานจาก Tourist Center เข้าไปยังจุดเริ่มต้น</p>
+                    </div>
+
+                    <div class="timeline-item">
+                        <span class="timeline-marker">🍜</span>
+                        <h3 class="text-lg font-semibold text-gray-800 mb-1">14:00 - 15:00: มื้อกลางวัน</h3>
+                        <p class="text-gray-600">ทานอาหารกลางวัน (ปกติจะรวมในทัวร์) หรือทานที่ Tourist Center</p>
+                    </div>
+
+                    <div class="timeline-item">
+                        <span class="timeline-marker">⛰️</span>
+                        <h3 class="text-lg font-semibold text-gray-800 mb-1">15:00 - 17:00: (Optional) ระเบียงแก้ว (Wulong Glass Bridge) หรือ Longshuixia Fissure (龙水峡地缝)</h3>
+                        <p class="text-gray-600">หากทัวร์รวม หรือมีเวลาเหลือ สามารถไปต่อที่:</p>
+                        <p class="text-gray-600 mt-1">1. <strong>ระเบียงแก้ว:</strong> จุดชมวิวพื้นกระจกใสยื่นออกไปจากหน้าผา (หวาดเสียว!)</p>
+                        <p class="text-gray-600 mt-1">2. <strong>Longshuixia Fissure:</strong> หุบเหวลึก เดินลงไปชมน้ำตกและลำธารด้านล่าง (สวยงามคนละแบบกับหลุมฟ้า)</p>
+                    </div>
+
+                    <div class="timeline-item">
+                        <span class="timeline-marker">🚆</span>
+                        <h3 class="text-lg font-semibold text-gray-800 mb-1">17:00 - 20:30: เดินทางกลับฉงชิ่ง</h3>
+                        <p class="text-gray-600">เดินทางกลับ (รถทัวร์ หรือ รถไฟความเร็วสูง) มายังตัวเมืองฉงชิ่ง</p>
+                    </div>
+
+                    <div class="timeline-item">
+                        <span class="timeline-marker">😴</span>
+                        <h3 class="text-lg font-semibold text-gray-800 mb-1">20:30 เป็นต้นไป: มื้อเย็นและพักผ่อน</h3>
+                        <p class="text-gray-600">มื้อเย็นง่ายๆ แถวที่พัก หลังจากเดินทางมาทั้งวัน</p>
+                    </div>
+                </section>
+
+                <!-- SECTION: DAY 4 -->
+                <section class="bg-white p-6 md:p-8 rounded-lg shadow-xl space-y-6">
+                    <header class="text-center" id="day4">
+                        <h2 class="text-3xl font-bold text-gray-900">🗓️ วันที่ 4: 24 พ.ย. (จันทร์)</h2>
+                        <p class="text-xl text-indigo-600 mt-1">ธีม: 3D City (Yuzhong), วิวฝั่งตรงข้าม (Jiangbei) & แสงสียามค่ำ (Nan'an)</p>
+                    </header>
+
+                    <div class="timeline-item">
+                        <span class="timeline-marker">🏙️</span>
+                        <h3 class="text-lg font-semibold text-gray-800 mb-1">10:00 - 11:30: Jiefangbei (解放碑) & ตึก WFC (World Financial Center)</h3>
+                        <p class="text-gray-600">เดินเล่นย่านใจกลางเมือง จัตุรัส Jiefangbei (อนุสาวรีย์ปลดแอก) ศูนย์กลางการช้อปปิ้ง</p>
+                        <p class="text-gray-600 mt-1"><strong>(Optional) ขึ้นตึก WFC:</strong> หากต้องการชมวิวเมืองมุมสูง (คล้าย E'ling Park แต่เป็นวิวในเมือง) สามารถขึ้นไปที่จุดชมวิวชั้น 73-74 ได้ (มีค่าเข้า)</p>
+                        <p class="text-gray-600 mt-1"><strong>การเดินทาง:</strong> เดินจากที่พัก (Xiaoshizi) หรือนั่ง <span class="font-semibold text-red-600">Line 1</span> / <span class="font-semibold text-green-600">Line 2</span> ลง Jiaochangkou (较场口)</p>
+                    </div>
+
+                    <div class="timeline-item">
+                        <span class="timeline-marker">🌳</span>
+                        <h3 class="text-lg font-semibold text-gray-800 mb-1">11:30 - 13:00: สวนสาธารณะ Jiangbeizui (江北嘴中央公园)</h3>
+                        <p class="text-gray-600">ข้ามไปฝั่ง Jiangbei เพื่อชมวิว "Grand Theatre" (โรงละครใหญ่) และวิวตึก Raffles City กับ Hongyadong จากฝั่งตรงข้าม</p>
+                        <p class="text-gray-600 mt-1"><strong>การเดินทาง:</strong> <span class="font-semibold text-blue-600">Line 6 (สายสีฟ้า)</span> จาก Xiaoshizi (小什字) ข้ามแม่น้ำไปลงสถานี Grand Theatre (大剧院) Exit 2</p>
+                    </div>
+
+                    <div class="timeline-item">
+                        <span class="timeline-marker">🍜</span>
+                        <h3 class="text-lg font-semibold text-gray-800 mb-1">13:00 - 14:00: มื้อกลางวันแถว Jiangbeizui</h3>
+                        <p class="text-gray-600">ทานอาหารกลางวันแถวสถานี Grand Theatre หรือนั่งรถต่อไปย่าน Guanyinqiao (观音桥)</p>
+                    </div>
+
+                    <div class="timeline-item">
+                        <span class="timeline-marker">🛍️</span>
+                        <h3 class="text-lg font-semibold text-gray-800 mb-1">14:30 - 17:00: (Optional) ย่านช้อปปิ้ง Guanyinqiao (观音桥)</h3>
+                        <p class="text-gray-600">หากเป็นสายช้อปปิ้ง ย่านนี้คือสยามสแควร์ของฉงชิ่ง มีห้างใหญ่ๆ และร้านค้ามากมาย (ถ้าไม่ช้อปปิ้ง ข้ามไปข้อถัดไปได้เลย)</p>
+                        <p class="text-gray-600 mt-1"><strong>การเดินทาง:</strong> <span class="font-semibold text-orange-500">Line 3 (สายสีส้ม)</span> หรือ <span class="font-semibold text-blue-600">Line 6</span> (ต้องต่อรถ) ไปลง Guanyinqiao (观音桥)</p>
+                    </div>
+
+                    <div class="timeline-item">
+                        <span class="timeline-marker">🎨</span>
+                        <h3 class="text-lg font-semibold text-gray-800 mb-1">15:00 - 17:30: (Alternative) หมู่บ้านศิลปะกราฟิตี้ (Sichuan Fine Arts Institute - 涂鸦一条街)</h3>
+                        <p class="text-gray-600">แทนการช้อปปิ้ง ไปชมย่านศิลปะที่เต็มไปด้วยกราฟิตี้บนตึกและกำแพงยาวหลายร้อยเมตร ใกล้มหาวิทยาลัยศิลปะเสฉวน</p>
+                        <p class="text-gray-600 mt-1"><strong>การเดินทาง:</strong> <span class="font-semibold text-green-600">Line 2 (สายสีเขียว)</span> จาก Jiaochangkou (较场口) ไปลง Yangjiaping (杨家坪) แล้วต่อแท็กซี่ หรือนั่ง <span class="font-semibold text-red-600">Line 1</span> ไป Daping (大坪) เปลี่ยนเป็น <span class="font-semibold text-green-600">Line 2</span></p>
+                    </div>
+
+                    <div class="timeline-item">
+                        <span class="timeline-marker">🌆</span>
+                        <h3 class="text-lg font-semibold text-gray-800 mb-1">18:00 - 20:00: จุดชมวิว Yikeshu (一棵树观景台) - ฝั่ง Nan'an</h3>
+                        <p class="text-gray-600">จุดชมวิวคลาสสิก (ต้องเสียค่าเข้า) บนเขาฝั่ง Nan'an เพื่อชมวิวพระอาทิตย์ตกและวิวเมืองฉงชิ่ง (ฝั่ง Yuzhong) เปิดไฟยามค่ำคืน สวยงามมาก</p>
+                        <p class="text-gray-600 mt-1"><strong>การเดินทาง:</strong> นั่งแท็กซี่/DiDi จากที่พัก (ย่าน Xiaoshizi) หรือจากสถานีรถไฟฟ้าที่ใกล้ที่สุด (เช่น สถานี Shangxinjie - <span class="font-semibold text-blue-600">Line 6</span>) ขึ้นเขาไปเลย สะดวกที่สุด</p>
+                    </div>
+
+                    <div class="timeline-item">
+                        <span class="timeline-marker">🍲</span>
+                        <h3 class="text-lg font-semibold text-gray-800 mb-1">20:30 เป็นต้นไป: มื้อเย็นแถว Nan'an หรือกลับมาทานที่ Jiefangbei</h3>
+                        <p class="text-gray-600">ทานอาหารเย็นบนเขา หรือนั่งรถกลับมาทานแถวที่พัก</p>
+                    </div>
+                </section>
+
+                <!-- SECTION: DAY 5 -->
+                <section class="bg-white p-6 md:p-8 rounded-lg shadow-xl space-y-6">
+                    <header class="text-center" id="day5">
+                        <h2 class="text-3xl font-bold text-gray-900">🗓️ วันที่ 5: 25 พ.ย. (อังคาร)</h2>
+                        <p class="text-xl text-indigo-600 mt-1">ธีม: ช้อปปิ้ง Jiangbei, มอลล์ทันสมัย (Yubei) & วัดบนเขา</p>
+                    </header>
+
+                    <div class="timeline-item">
+                        <span class="timeline-marker">🛍️</span>
+                        <h3 class="text-lg font-semibold text-gray-800 mb-1">10:00 - 12:30: ย่าน Beicheng Tianjie (北城天街) - (Jiangbei)</h3>
+                        <p class="text-gray-600">อีกหนึ่งย่านช้อปปิ้งขนาดใหญ่ฝั่ง Jiangbei (คล้าย Guanyinqiao) มีห้าง Paradise Walk และร้านค้ามากมาย หรือเดินเล่นเก็บตกย่าน Jiefangbei/Hongyadong ตอนกลางวัน</p>
+                        <p class="text-gray-600 mt-1"><strong>การเดินทาง:</strong> <span class="font-semibold text-blue-600">Line 6</span> จาก Xiaoshizi (小什字) ไปลง Beicheng Tianjie (北城天街)</p>
+                    </div>
+                    
+                    <div class="timeline-item">
+                        <span class="timeline-marker">🍜</span>
+                        <h3 class="text-lg font-semibold text-gray-800 mb-1">12:30 - 13:30: มื้อกลางวัน</h3>
+                        <p class="text-gray-600">ทานอาหารกลางวันในห้างแถว Beicheng Tianjie</p>
+                    </div>
+
+                    <div class="timeline-item">
+                        <span class="timeline-marker">🌳</span>
+                        <h3 class="text-lg font-semibold text-gray-800 mb-1">14:00 - 16:30: สวนสาธารณะ Zhaomu Mountain (照母山森林公园) - (Yubei)</h3>
+                        <p class="text-gray-600">ออกนอกเมืองมาเล็กน้อย (เขต Yubei) เพื่อสัมผัสธรรมชาติ สวนสาธารณะขนาดใหญ่ บรรยากาศดี เหมาะกับการเดินเล่นพักผ่อน มีวัด (ศาลเจ้า?) บนเนินเขาให้เดินขึ้นไปชมวิว</p>
+                        <p class="text-gray-600 mt-1"><strong>การเดินทาง:</strong> <span class="font-semibold text-blue-600">Line 6</span> ต่อ <span class="font-semibold text-purple-700">Line 5 (สายสีม่วงอ่อน)</span> หรือ <span class="font-semibold text-yellow-500">Loop Line (สาย 0)</span> ไปลงสถานี Zhaomushan (照母山)</p>
+                    </div>
+
+                    <div class="timeline-item">
+                        <span class="timeline-marker">🏬</span>
+                        <h3 class="text-lg font-semibold text-gray-800 mb-1">17:00 - 19:00: ห้าง The New Land (新光天地) หรือ IKEA</h3>
+                        <p class="text-gray-600">แวะชมห้างสรรพสินค้าที่ทันสมัยและใหญ่โตมากในย่าน Yubei หรือแวะ IKEA (หากสนใจ)</p>
+                        <p class="text-gray-600 mt-1"><strong>การเดินทาง:</strong> นั่ง <span class="font-semibold text-purple-700">Line 5</span> / <span class="font-semibold text-yellow-500">Loop Line</span> มาลงสถานี The New Land (光电园)</p>
+                    </div>
+
+                    <div class="timeline-item">
+                        <span class="timeline-marker">🎁</span>
+                        <h3 class="text-lg font-semibold text-gray-800 mb-1">19:00 เป็นต้นไป: มื้อเย็นสุดท้าย & ซื้อของฝาก</h3>
+                        <p class="text-gray-600">เดินทางกลับเข้าเมือง (Yuzhong) ทานมื้อเย็นมื้อสุดท้ายที่อยากทาน (หม้อไฟอีกรอบ?) และเดินซื้อของฝากแถว Jiefangbei หรือ Hongyadong</p>
+                        <p class="text-gray-600 mt-1"><strong>การเดินทางกลับ:</strong> <span class="font-semibold text-purple-700">Line 5</span> ต่อ <span class="font-semibold text-blue-600">Line 6</span> (หรือสายอื่นๆ) กลับมา Xiaoshizi (小什字)</p>
+                    </div>
+
+                    <div class="timeline-item">
+                        <span class="timeline-marker">🧳</span>
+                        <h3 class="text-lg font-semibold text-gray-800 mb-1">21:00: กลับที่พัก แพ็คกระเป๋า</h3>
+                        <p class="text-gray-600">เตรียมตัวสำหรับเดินทางกลับในวันพรุ่งนี้</p>
+                    </div>
+                </section>
+
+                <!-- SECTION: DAY 6 -->
+                <section class="bg-white p-6 md:p-8 rounded-lg shadow-xl space-y-6">
+                    <header class="text-center" id="day6">
+                        <h2 class="text-3xl font-bold text-gray-900">🗓️ วันที่ 6: 26 พ.ย. (พุธ)</h2>
+                        <p class="text-xl text-indigo-600 mt-1">ธีม: เดินทางกลับกรุงเทพฯ</p>
+                    </header>
+
+                    <div class="timeline-item">
+                        <span class="timeline-marker">🥐</span>
+                        <h3 class="text-lg font-semibold text-gray-800 mb-1">07:30 - 08:30: มื้อเช้า และ Check-out</h3>
+                        <p class="text-gray-600">ทานอาหารเช้าง่ายๆ ใกล้ที่พัก และทำการ Check-out (หรือฝากกระเป๋าไว้ก่อน ถ้าไฟลท์บ่าย/เย็น)</p>
+                        <p class="text-yellow-600 bg-yellow-50 p-3 rounded-md mt-2"><strong>สำคัญ:</strong> ไฟลท์ออก 11:20 น. ควรออกจากโรงแรมไม่เกิน 08:30 น.</p>
+                    </div>
+
+                    <div class="timeline-item">
+                        <span class="timeline-marker">🚕</span>
+                        <h3 class="text-lg font-semibold text-gray-800 mb-1">08:30 - 09:30: เดินทางไปสนามบิน (CKG)</h3>
+                        <p class="text-gray-600"><strong>วิธีที่ 1 (แนะนำ):</strong> เรียกแท็กซี่ หรือ DiDi จากโรงแรมไปสนามบิน CKG T3 เลย (สะดวกที่สุดเมื่อมีกระเป๋าเดินทาง ใช้เวลาประมาณ 40-60 นาที)</p>
+                        <p class="text-gray-600 mt-1"><strong>วิธีที่ 2 (ประหยัด):</strong> <span class="font-semibold text-blue-600">Line 6 (สายสีฟ้า)</span> จาก Xiaoshizi (小什字) ไป Tuanjiecun (团结村) แล้วต่อ <span class="font-semibold text-purple-600">Airport Express Line 10 (สายสีม่วง)</span> ไปลง T3 (重庆江北国际机场T3航站楼) (ใช้เวลาประมาณ 1.5 ชม.)</p>
+                    </div>
+
+                    <div class="timeline-item">
+                        <span class="timeline-marker">🛫</span>
+                        <h3 class="text-lg font-semibold text-gray-800 mb-1">09:30 - 11:20: Check-in และรอขึ้นเครื่อง</h3>
+                        <p class="text-gray-600">Check-in เคาน์เตอร์ AirAsia (FD557), โหลดกระเป๋า, ผ่าน Security Check และ ตม.</p>
+                    </div>
+
+                    <div class="timeline-item">
+                        <span class="timeline-marker">🇹🇭</span>
+                        <h3 class="text-lg font-semibold text-gray-800 mb-1">13:40: เดินทางถึงกรุงเทพฯ (DMK)</h3>
+                        <p class="text-gray-600">โดยสวัสดิภาพ</p>
+                    </div>
+                </section>
+
             </div>
-
-            <!-- SECTION: DAY 1 -->
-            <div id="tab-day1" class="content-section space-y-6">
-                <header class="text-center">
-                    <h2 class="text-3xl font-bold text-gray-900">🗓️ วันที่ 1: 21 พ.ย. (พฤหัสบดี)</h2>
-                    <p class="text-xl text-indigo-600 mt-1">ธีม: เมืองโบราณ & วิวกลางคืนสุดอลังการ</p>
-                </header>
-                <div class="space-y-4">
-                    <div class="bg-white p-5 rounded-lg shadow-md border border-gray-200">
-                        <p class="font-bold text-gray-700">ช่วงเช้า (10:20 - 12:30)</p>
-                        <h3 class="text-xl font-semibold mt-1">เดินทางสู่ที่พัก (โรงแรมสโตน 顽石酒店)</h3>
-                        <p class="text-gray-600 mt-2">ผ่าน ตม., รับกระเป๋า, และเดินทางเข้าที่พัก</p>
-                        <p class="text-sm text-gray-500 mt-2">🚇 <strong>Metro:</strong> จากสนามบิน (T3) ➡️ <span class="font-bold">สาย 10 (สีม่วง)</span> ➡️ สถานี Hongtudi (红土地) ➡️ เปลี่ยน <span class="font-bold">สาย 6 (สีชมพู)</span> ➡️ สถานี Xiaoshizi (小什字) (ใช้ทางออก 4A หรือ 5B เดินใกล้สุด) (ใช้เวลา ≈ 1 ชม.)</p>
-                        <p class="text-sm text-gray-500 mt-2">🚕 <strong>Didi:</strong> บอกคนขับว่า "Wánshí Jiǔdiàn, Jiěfàngbēi Láifúshì Diàn" (顽石酒店, 解放碑来福士店) หรือปักหมุดที่ 渝中区新华路1号 (ใช้เวลา ≈ 40-50 นาที)</p>
-                    </div>
-                    <div class="bg-white p-5 rounded-lg shadow-md border border-gray-200">
-                        <p class="font-bold text-gray-700">ช่วงบ่าย (13:00 - 14:00)</p>
-                        <h3 class="text-xl font-semibold mt-1">มื้อกลางวัน</h3>
-                        <p class="text-gray-600 mt-2">หาของกินง่ายๆ แถวที่พัก (ย่าน Jiefangbei หรือ Bayi Hao Chi Jie 八一好吃街)</p>
-                    </div>
-                    <div class="bg-white p-5 rounded-lg shadow-md border border-gray-200">
-                        <div class="flex flex-wrap justify-between items-center gap-2">
-                            <h3 class="text-xl font-semibold">เมืองโบราณ Ciqikou (磁器口古镇)</h3>
-                            <span class="tag-must font-medium px-3 py-1 rounded-full">Must (Shopping)</span>
-                        </div>
-                        <p class="font-bold text-gray-700 mt-1">ช่วงบ่าย (14:30 - 17:00)</p>
-                        <p class="text-gray-600 mt-2">เดินเล่นตรอกซอกซอย ชมบ้านไม้โบราณ โรงน้ำชาท้องถิ่น (บรรยากาศย้อนยุค)</p>
-                        <p class="text-sm text-gray-500 mt-2">🚇 <strong>การเดินทาง (จากโรงแรม):</strong> เดินไปสถานี Xiaoshizi (小什字) ➡️ <span class="font-bold">Metro Line 1 (สายสีแดง)</span> ➡️ สถานี Ciqikou (磁器口) (ใช้เวลา ≈ 30-40 นาที)</p>
-                    </div>
-                    <div class="bg-white p-5 rounded-lg shadow-md border border-gray-200">
-                        <div class="flex flex-wrap justify-between items-center gap-2">
-                            <h3 class="text-xl font-semibold">Hongya Cave (洪崖洞)</h3>
-                            <span class="tag-must font-medium px-3 py-1 rounded-full">Must (Photo/Dinner)</span>
-                        </div>
-                        <p class="font-bold text-gray-700 mt-1">ช่วงเย็น (18:00 เป็นต้นไป)</p>
-                        <p class="text-gray-600 mt-2">จุดห้ามพลาดคืนแรก! ชมสถาปัตยกรรมริมผาเปิดไฟยามค่ำคืน (มุมมหาชนคือข้ามสะพาน Qiansimen)</p>
-                        <p class="text-sm text-gray-500 mt-2">🚇 <strong>การเดินทาง (จาก Ciqikou):</strong> <span class="font-bold">Metro Line 1</span> ➡️ กลับมาที่สถานี Xiaoshizi (小什字) ➡️ <span class="font-bold">เดินจากโรงแรมได้เลย</span> (หรือเดินจากทางออก 9 ของสถานี) โรงแรมอยู่ใกล้มาก!</p>
-                    </div>
-                </div>
-            </div>
-
-            <!-- SECTION: DAY 2 -->
-            <div id="tab-day2" class="content-section space-y-6">
-                <header class="text-center">
-                    <h2 class="text-3xl font-bold text-gray-900">🗓️ วันที่ 2: 22 พ.ย. (ศุกร์)</h2>
-                    <p class="text-xl text-indigo-600 mt-1">ธีม: ตะลุย Yuzhong (ฝั่งตะวันตก) & จุดชมวิว 3 มิติ</p>
-                    <p class="text-sm text-amber-700 mt-2">⚠️ <strong>Note:</strong> วันนี้มีหลายจุดมาก (ตามแผนเดิม) แนะนำให้จัดลำดับตามความสนใจ และอาจต้องตัดบางรายการ 'Try' หรือ 'If' ออกไป</p>
-                </header>
-                <div class="space-y-4">
-                    <div class="bg-white p-5 rounded-lg shadow-md border border-gray-200">
-                        <div class="flex flex-wrap justify-between items-center gap-2">
-                            <h3 class="text-xl font-semibold">สถานี Liziba (李子坝站)</h3>
-                            <span class="tag-try font-medium px-3 py-1 rounded-full">Try (Photo Spot)</span>
-                        </div>
-                        <p class="text-gray-600 mt-2">จุดถ่ายภาพรถไฟโมโนเรลสาย 2 ที่วิ่งผ่านอาคาร</p>
-                        <p class="text-sm text-gray-500 mt-2">🚇 <strong>การเดินทาง (จากโรงแรม):</strong> สถานี Xiaoshizi ➡️ <span class="font-bold">Metro Line 1</span> ➡️ Daping (大坪) ➡️ เปลี่ยน <span class="font-bold">สาย 2</span> ➡️ สถานี Liziba (李子坝)</p>
-                    </div>
-                    <div class="bg-white p-5 rounded-lg shadow-md border border-gray-200">
-                        <div class="flex flex-wrap justify-between items-center gap-2">
-                            <h3 class="text-xl font-semibold">Eling Park (鹅岭公园)</h3>
-                            <span class="tag-must font-medium px-3 py-1 rounded-full">Must (Viewpoint)</span>
-                        </div>
-                        <p class="text-gray-600 mt-2">จุดชมวิวพาโนรามา เห็นวิวเมืองฉงชิ่งได้ 2 ฝั่งแม่น้ำ</p>
-                        <p class="text-sm text-gray-500 mt-2">🚇 <strong>การเดินทาง (จาก Liziba):</strong> <span class="font-bold">Metro Line 2</span> ➡️ Daping (大坪) ➡️ เปลี่ยน <span class="font-bold">สาย 1</span> ➡️ สถานี Eling (鹅岭)</p>
-                    </div>
-                    <div class="bg-white p-5 rounded-lg shadow-md border border-gray-200">
-                        <div class="flex flex-wrap justify-between items-center gap-2">
-                            <h3 class="text-xl font-semibold">Eling No.2 Factory (鹅岭二厂) & คาเฟ่</h3>
-                            <span class="tag-try font-medium px-3 py-1 rounded-full">Try (Photo Spot/Cafe)</span>
-                        </div>
-                        <p class="text-gray-600 mt-2">โรงพิมพ์เก่าสไตล์วินเทจ มีคาเฟ่ (Lao Quancun, Lazy Fish Time) และจุดถ่ายภาพกราฟฟิตี้</p>
-                        <p class="text-sm text-gray-500 mt-2">🚶 <strong>การเดินทาง (จาก Eling Park):</strong> สามารถเดินต่อจาก Eling Park ได้เลย (ประมาณ 10-15 นาที)</p>
-                    </div>
-                     <div class="bg-white p-5 rounded-lg shadow-md border border-gray-200">
-                        <div class="flex flex-wrap justify-between items-center gap-2">
-                            <h3 class="text-xl font-semibold">Train from Anime (佛图关)</h3>
-                            <span class="tag-try font-medium px-3 py-1 rounded-full">Try (Photo Spot)</span>
-                        </div>
-                        <p class="text-gray-600 mt-2">มุมถ่ายภาพรถไฟสาย 2 วิ่งผ่านต้นไม้เขียวขจี</p>
-                        <p class="text-sm text-gray-500 mt-2">🚇 <strong>การเดินทาง (จาก Eling):</strong> <span class="font-bold">Metro Line 1</span> ➡️ Daping (大坪) ➡️ เปลี่ยน <span class="font-bold">สาย 2</span> ➡️ สถานี Fotuguan (佛图关) (ทางออก 1)</p>
-                    </div>
-                    <div class="bg-white p-5 rounded-lg shadow-md border border-gray-200">
-                        <div class="flex flex-wrap justify-between items-center gap-2">
-                            <h3 class="text-xl font-semibold">Luohan Temple (罗汉寺)</h3>
-                            <span class="tag-must font-medium px-3 py-1 rounded-full">Must (Architecture)</span>
-                        </div>
-                        <p class="text-gray-600 mt-2">วัดเก่าแก่ใจกลางเมือง (ใกล้ที่พัก)</p>
-                        <p class="text-sm text-gray-500 mt-2">🚇 <strong>การเดินทาง (กลับจากโซนตะวันตก):</strong> นั่ง Metro (สาย 1 หรือ 2) ➡️ กลับมาที่สถานี <span class="font-bold">Xiaoshizi (小什字)</span> แล้วเดินไปวัด</p>
-                    </div>
-                     <div class="bg-white p-5 rounded-lg shadow-md border border-gray-200">
-                        <div class="flex flex-wrap justify-between items-center gap-2">
-                            <h3 class="text-xl font-semibold">Huguang Guild Hall (湖广会馆)</h3>
-                            <span class="tag-try font-medium px-3 py-1 rounded-full">Try (Photo Spot)</span>
-                        </div>
-                        <p class="text-gray-600 mt-2">สมาคมพ่อค้าเก่าแก่ มุมถ่ายสะพาน Dongshuimen</p>
-                        <p class="text-sm text-gray-500 mt-2">🚶 <strong>การเดินทาง (จาก Luohan Temple):</strong> สามารถเดิน (≈ 15-20 นาที) หรือ Didi ไปได้</p>
-                    </div>
-                    <div class="bg-white p-5 rounded-lg shadow-md border border-gray-200">
-                        <div class="flex flex-wrap justify-between items-center gap-2">
-                            <h3 class="text-xl font-semibold">Yangtze River Cableway (长江索道)</h3>
-                            <span class="tag-if font-medium px-3 py-1 rounded-full">If (View)</span>
-                        </div>
-                        <p class="text-gray-600 mt-2">กระเช้าข้ามแม่น้ำ Yangtze (อาจคิวยาว)</p>
-                        <p class="text-sm text-gray-500 mt-2">🚶 <strong>การเดินทาง:</strong> สถานี Běizhàn (北站) อยู่ใกล้ Huguang Guild Hall / สถานี Xiaoshizi</p>
-                    </div>
-                    <div class="bg-white p-5 rounded-lg shadow-md border border-gray-200">
-                        <div class="flex flex-wrap justify-between items-center gap-2">
-                            <h3 class="text-xl font-semibold">Nanbin Road (南滨路) - Drone Show (20:30)</h3>
-                            <span class="tag-must font-medium px-3 py-1 rounded-full">Must (Event/Photo)</span>
-                        </div>
-                        <p class="text-gray-600 mt-2">ชมโดรนโชว์ "New Rhyme of Chongqing" (เวลา 20:30) และวิวเมืองฝั่งตรงข้าม</p>
-                        <p class="text-sm text-gray-500 mt-2">🚕 <strong>การเดินทาง:</strong> 
-                            <br>1. (ถ้าข้ามกระเช้ามา) อยู่ฝั่ง Nan'an แล้ว เดิน/Didi ต่อไปที่จุดชมโชว์
-                            <br>2. (ถ้าอยู่ Yuzhong) นั่ง Didi ข้ามสะพานไปที่ถนน Nanbin Road (南滨路)</p>
-                    </div>
-                </div>
-            </div>
-
-            <!-- SECTION: DAY 3 -->
-            <div id="tab-day3" class="content-section space-y-6">
-                <header class="text-center">
-                    <h2 class="text-3xl font-bold text-gray-900">🗓️ วันที่ 3: 23 พ.ย. (เสาร์)</h2>
-                    <p class="text-xl text-indigo-600 mt-1">ธีม: มรดกโลกอู่หลง (Wulong Day Trip)</p>
-                </header>
-                <div class="space-y-4">
-                    <div class="bg-white p-5 rounded-lg shadow-md border border-gray-200">
-                        <p class="font-bold text-gray-700">เช้าตรู่ (07:00 - 10:30)</p>
-                        <h3 class="text-xl font-semibold mt-1">เดินทางไปอู่หลง (Wulong)</h3>
-                        <p class="text-gray-600 mt-2">ต้องออกเช้ามาก! (ก่อน 07:00) เพื่อไปให้ถึง Tourist Center ก่อนเที่ยง</p>
-                        <p class="text-sm text-gray-500 mt-2">🚄 <strong>HSR (แนะนำ):</strong> จากโรงแรม Didi/Metro ➡️ สถานี Chongqing North (重庆北站) ➡️ รถไฟความเร็วสูง (≈ 1.5 ชม.) ➡️ สถานี Wulong (武隆站) จากนั้นต่อแท็กซี่/รถบัสท้องถิ่น ➡️ Wulong Karst Tourist Center (武隆喀斯特旅游区)</p>
-                        <p class="text-sm text-gray-500 mt-2">🚌 <strong>รถบัส:</strong> Didi/Metro ➡️ สถานี Sigongli (四公里) ➡️ รถบัส (≈ 2.5-3 ชม.)</p>
-                    </div>
-                    <div class="bg-white p-5 rounded-lg shadow-md border border-gray-200">
-                        <div class="flex flex-wrap justify-between items-center gap-2">
-                            <h3 class="text-xl font-semibold">อุทยานหลุมฟ้า 3 สะพานสวรรค์ (天生三桥)</h3>
-                            <span class="tag-must font-medium px-3 py-1 rounded-full">Must (Day Trip)</span>
-                        </div>
-                        <p class="font-bold text-gray-700 mt-1">สาย-บ่าย (11:00 - 16:00)</p>
-                        <p class="text-gray-600 mt-2">จุด "Must" ของทริป! ซื้อตั๋วที่ Tourist Center (รวมรถบัสไป-กลับทางเข้า) ลงลิฟต์แก้วชมสะพานหินธรรมชาติ 3 แห่ง และโรงเตี๊ยมโบราณ (จุดถ่ายทำ Transformers)</p>
-                    </div>
-                    <div class="bg-white p-5 rounded-lg shadow-md border border-gray-200">
-                        <p class="font-bold text-gray-700">เย็น-ค่ำ (16:00 - 20:00)</p>
-                        <h3 class="text-xl font-semibold mt-1">เดินทางกลับฉงชิ่ง</h3>
-                        <p class="text-gray-600 mt-2">เผื่อเวลาเดินทางกลับมายังตัวเมืองฉงชิ่ง</p>
-                    </div>
-                     <div class="bg-white p-5 rounded-lg shadow-md border border-gray-200">
-                        <div class="flex flex-wrap justify-between items-center gap-2">
-                            <h3 class="text-xl font-semibold">Jiefangbei (解放碑) & Bayi Hao Chi Jie (八一好吃街)</h3>
-                            <span class="tag-must font-medium px-3 py-1 rounded-full">Must (Shopping/Food)</span>
-                        </div>
-                        <p class="font-bold text-gray-700 mt-1">ช่วงค่ำ (20:00 เป็นต้นไป)</p>
-                        <p class="text-gray-600 mt-2">กลับมาพักผ่อน/ช้อปปิ้ง/หาคาเฟ่ (Popping Cafe) หรือของกินที่ถนนของกิน Bayi แถวโรงแรม</p>
-                    </div>
-                </div>
-            </div>
-
-            <!-- SECTION: DAY 4 -->
-            <div id="tab-day4" class="content-section space-y-6">
-                <header class="text-center">
-                    <h2 class="text-3xl font-bold text-gray-900">🗓️ วันที่ 4: 24 พ.ย. (อาทิตย์)</h2>
-                    <p class="text-xl text-indigo-600 mt-1">ธีม: 3D City (Yuzhong), วิวฝั่งตรงข้าม (Jiangbei) & แสงสียามค่ำ (Nan'an)</p>
-                </header>
-                <div class="space-y-4">
-                    <div class="bg-white p-5 rounded-lg shadow-md border border-gray-200">
-                        <div class="flex flex-wrap justify-between items-center gap-2">
-                            <h3 class="text-xl font-semibold">Shibatidi (十八梯)</h3>
-                            <span class="tag-try font-medium px-3 py-1 rounded-full">Try (Photo Spot)</span>
-                        </div>
-                        <p class="font-bold text-gray-700 mt-1">ช่วงเช้า</p>
-                        <p class="text-gray-600 mt-2">บันไดหินเก่าแก่ที่รีโนเวทใหม่ มีคาเฟ่และบรรยากาศดั้งเดิม</p>
-                        <p class="text-sm text-gray-500 mt-2">🚇 <strong>การเดินทาง (จากโรงแรม):</strong> <span class="font-bold">Metro Line 1</span> (จาก Xiaoshizi) ➡️ สถานี Jiaochangkou (较场口) แล้วเดิน (หรือ Didi ไปเลย)</p>
-                    </div>
-                    <div class="bg-white p-5 rounded-lg shadow-md border border-gray-200">
-                        <div class="flex flex-wrap justify-between items-center gap-2">
-                            <h3 class="text-xl font-semibold">Jiangbeizui Parks & ตึกตะเกียบ (Chopsticks Bldg)</h3>
-                            <span class="tag-must font-medium px-3 py-1 rounded-full">Must (Photo Spot)</span>
-                        </div>
-                        <p class="font-bold text-gray-700 mt-1">ช่วงบ่าย</p>
-                        <p class="text-gray-600 mt-2">จุดถ่ายภาพตึกคู่ (ตึกตะเกียบ) และวิวฝั่งตรงข้ามที่เห็น Raffles City / Yuzhong / Hongya Cave ชัดเจน</p>
-                        <p class="text-sm text-gray-500 mt-2">🚇 <strong>การเดินทาง (จาก Jiaochangkou):</strong> <span class="font-bold">Metro Line 2</span> ➡️ Niujiaotuo ➡️ เปลี่ยน <span class="font-bold">สาย 6</span> ➡️ สถานี Dajuyuan (大剧院) (Grand Theater) ทางออก 3</p>
-                    </div>
-                    <div class="bg-white p-5 rounded-lg shadow-md border border-gray-200">
-                        <div class="flex flex-wrap justify-between items-center gap-2">
-                            <h3 class="text-xl font-semibold">Gangyu Square (岗屿广场) & Twin Tower Spot</h3>
-                            <span class="tag-try font-medium px-3 py-1 rounded-full">Try (Photo Spot)</span>
-                        </div>
-                        <p class="font-bold text-gray-700 mt-1">ช่วงบ่ายแก่ๆ (กลับมาฝั่ง Yuzhong)</p>
-                        <p class="text-gray-600 mt-2">จุดถ่ายภาพตึก Raffles City (Gangyu Sq) และ ตึกคู่ Twin Tower (元通寺小区)</p>
-                        <p class="text-sm text-gray-500 mt-2">🚇 <strong>การเดินทาง (จาก Dajuyuan):</strong> <span class="font-bold">Metro Line 6</span> ➡️ กลับมาสถานี <span class="font-bold">Xiaoshizi (小什字)</span> (ทางออก 8 และ 5B) (เดินจากโรงแรมได้)</p>
-                    </div>
-                     <div class="bg-white p-5 rounded-lg shadow-md border border-gray-200">
-                        <div class="flex flex-wrap justify-between items-center gap-2">
-                            <h3 class="text-xl font-semibold">Chaotianmen Square (朝天门广场)</h3>
-                            <span class="tag-try font-medium px-3 py-1 rounded-full">Try (Photo Spot)</span>
-                        </div>
-                        <p class="font-bold text-gray-700 mt-1">ช่วงเย็น (ก่อนค่ำ)</p>
-                        <p class="text-gray-600 mt-2">จุดชมวิวหัวเรือ (ตึก Raffles City) และจุดบรรจบแม่น้ำ</p>
-                        <p class="text-sm text-gray-500 mt-2">🚶 <strong>การเดินทาง:</strong> <span class="font-bold">เดินจากโรงแรมได้เลย</span> (อยู่ในบริเวณเดียวกัน)</p>
-                    </div>
-                    <div class="bg-white p-5 rounded-lg shadow-md border border-gray-200">
-                        <div class="flex flex-wrap justify-between items-center gap-2">
-                            <h3 class="text-xl font-semibold">Xinhaoli (新华里) & "La La Land" Spot</h3>
-                            <span class="tag-must font-medium px-3 py-1 rounded-full">Must (Dinner/Photo)</span>
-                        </div>
-                        <p class="font-bold text-gray-700 mt-1">ช่วงค่ำ (มื้อเย็น)</p>
-                        <p class="text-gray-600 mt-2">ย่านกินดื่ม ตรอกถ่ายภาพฟีลโบราณ (Longmenhao) และจุดชมวิว La La Land (ใกล้ Chongqing Institute of Socialism)</p>
-                        <p class="text-sm text-gray-500 mt-2">🚇 <strong>การเดินทาง (จากโรงแรม):</strong> <span class="font-bold">Metro Line 6</span> (จาก Xiaoshizi) ➡️ สถานี Shangxinjie (上新街) (ทางออก 1 หรือ 2)</p>
-                    </div>
-                </div>
-            </div>
-
-            <!-- SECTION: DAY 5 -->
-            <div id="tab-day5" class="content-section space-y-6">
-                <header class="text-center">
-                    <h2 class="text-3xl font-bold text-gray-900">🗓️ วันที่ 5: 25 พ.ย. (จันทร์)</h2>
-                    <p class="text-xl text-indigo-600 mt-1">ธีม: ช้อปปิ้ง Jiangbei, มอลล์ทันสมัย (Yubei) & วัดบนเขา</p>
-                </header>
-                <div class="space-y-4">
-                    <div class="bg-white p-5 rounded-lg shadow-md border border-gray-200">
-                        <div class="flex flex-wrap justify-between items-center gap-2">
-                            <h3 class="text-xl font-semibold">Guanyinqiao (观音桥) & Beicang (北仓文创街区)</h3>
-                            <span class="tag-must font-medium px-3 py-1 rounded-full">Must (Shopping/Cafe)</span>
-                        </div>
-                        <p class="font-bold text-gray-700 mt-1">ช่วงเช้า-เที่ยง</p>
-                        <p class="text-gray-600 mt-2">แหล่งช้อปปิ้งขนาดใหญ่ ถ่ายรูปกับจอ "I'm in Chongqing" (ทางออก 7) และเดินไปย่าน Beicang เพื่อหากาแฟ (Manner Coffee) หรือคาเฟ่สวยๆ</p>
-                        <p class="text-sm text-gray-500 mt-2">🚇 <strong>การเดินทาง (จากโรงแรม):</strong> <span class="font-bold">Metro Line 6</span> (จาก Xiaoshizi) ➡️ สถานี Guanyinqiao (观音桥)</p>
-                    </div>
-                    <div class="bg-white p-5 rounded-lg shadow-md border border-gray-200">
-                        <div class="flex flex-wrap justify-between items-center gap-2">
-                            <h3 class="text-xl font-semibold">The Ring (光环购物公园)</h3>
-                            <span class="tag-must font-medium px-3 py-1 rounded-full">Must (Shopping)</span>
-                        </div>
-                        <p class="font-bold text-gray-700 mt-1">ช่วงบ่าย</p>
-                        <p class="text-gray-600 mt-2">ห้างดีไซน์ทันสมัย (โซน Yubei) มีคาเฟ่ % Arabica (ค่อนข้างไกลจากตัวเมือง)</p>
-                        <p class="text-sm text-gray-500 mt-2">🚇 <strong>การเดินทาง (จาก Guanyinqiao):</strong> <span class="font-bold">Metro Line 3</span> ➡️ Hongqihegou (红旗河沟) ➡️ เปลี่ยน <span class="font-bold">สาย 5</span> ➡️ สถานี Chongguang (重光) (ใช้เวลาเดินทางพอสมควร)</p>
-                    </div>
-                    <div class="bg-white p-5 rounded-lg shadow-md border border-gray-200">
-                        <div class="flex flex-wrap justify-between items-center gap-2">
-                            <h3 class="text-xl font-semibold">Hong'en Temple Forest Park (弘恩寺森林公园)</h3>
-                            <span class="tag-must font-medium px-3 py-1 rounded-full">Must (Photo Spot)</span>
-                        </div>
-                        <p class="font-bold text-gray-700 mt-1">ช่วงเย็น (17:00 - 19:00)</p>
-                        <p class="text-gray-600 mt-2">จุด "Must" ที่ต้องมาช่วงเย็นย่ำ-ค่ำ เพื่อรอชม "ศาลาจีน 9 ชั้น (Hong'en Pavilion)" เปิดไฟ พร้อมวิวเมืองฉงชิ่งเป็นฉากหลัง</p>
-                        <p class="text-sm text-gray-500 mt-2">🚕 <strong>การเดินทาง (จาก The Ring):</strong> แนะนำ <span class="font-bold">Didi</span> (แท็กซี่) (อาจใช้เวลา 30-40 นาที) หรือ นั่ง Metro สาย 5 ➡️ Dashi Ba ➡️ Didi ต่อไปที่วัด</p>
-                    </div>
-                </div>
-            </div>
-
-            <!-- SECTION: DAY 6 -->
-            <div id="tab-day6" class="content-section space-y-6">
-                <header class="text-center">
-                    <h2 class="text-3xl font-bold text-gray-900">🗓️ วันที่ 6: 26 พ.ย. (อังคาร)</h2>
-                    <p class="text-xl text-indigo-600 mt-1">ธีม: เดินทางกลับกรุงเทพฯ</p>
-                </header>
-                <div class="space-y-4">
-                    <div class="bg-white p-5 rounded-lg shadow-md border border-gray-200">
-                        <p class="font-bold text-gray-700">ช่วงเช้า (07:00 - 08:30)</p>
-                        <h3 class="text-xl font-semibold mt-1">มื้อเช้า และ เช็คเอาท์</h3>
-                        <p class="text-gray-600 mt-2">ตื่นนอน รับประทานอาหารเช้า (บะหมี่ Xiaomian?) เก็บสัมภาระ และ Check-out</p>
-                    </div>
-                    <div class="bg-white p-5 rounded-lg shadow-md border border-gray-200">
-                        <p class="font-bold text-gray-700">ช่วงเช้า (08:30 - 09:30)</p>
-                        <h3 class="text-xl font-semibold mt-1">เดินทางไปสนามบิน (CKG)</h3>
-                        <p class="text-gray-600 mt-2">เดินทางไปสนามบิน (CKG) (ควรถึงสนามบิน 09:20 - 09:30 น. สำหรับไฟลท์ 11:20 น.)</p>
-                        <p class="text-sm text-gray-500 mt-2">🚇 <strong>Metro:</strong> (เผื่อเวลา 1.5 ชม.) สถานี Xiaoshizi ➡️ <span class="font-bold">สาย 6 (สีชมพู)</span> ➡️ สถานี Hongtudi (红土地) ➡️ เปลี่ยน <span class="font-bold">สาย 10 (สีม่วง)</span> ➡️ สถานี T3 (สนามบิน)</p>
-                        <p class="text-sm text-gray-500 mt-2">🚕 <strong>Didi (แนะนำ):</strong> (เผื่อเวลา 1 ชม.) เรียก Didi จากโรงแรมไป T3 เลย สะดวกที่สุด</p>
-                    </div>
-                    <div class="bg-white p-5 rounded-lg shadow-md border border-gray-200">
-                        <p class="font-bold text-gray-700">ช่วงสาย (11:20 - 13:35)</p>
-                        <h3 class="text-xl font-semibold mt-1">เดินทางกลับกรุงเทพฯ</h3>
-                        <p class="text-gray-600 mt-2">เที่ยวบิน <span class="font-bold">FD557</span> (CKG 11:20 - DMK 13:35)</p>
-                    </div>
-                </div>
-            </div>
-
         </main>
     </div>
 
     <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            
-            const ctx = document.getElementById('trip-vibe-chart').getContext('2d');
-            const tripVibeData = {
-                // ข้อมูลอ้างอิงจากไฟล์ต้นฉบับ: Must(11), Try(12), If(1)
-                labels: ['ต้องไป (Must)', 'น่าลอง (Try)', 'ถ้ามีเวลา (If)'],
-                datasets: [{
-                    label: 'จำนวนกิจกรรม',
-                    data: [11, 12, 1], 
-                    backgroundColor: [
-                        'rgba(22, 163, 74, 0.7)',  /* Green-600 */
-                        'rgba(37, 99, 235, 0.7)',   /* Blue-600 */
-                        'rgba(245, 158, 11, 0.7)'  /* Yellow-600 */
-                    ],
-                    borderColor: [
-                        'rgba(22, 163, 74, 1)',
-                        'rgba(37, 99, 235, 1)',
-                        'rgba(245, 158, 11, 1)'
-                    ],
-                    borderWidth: 1,
-                    hoverOffset: 4
-                }]
-            };
+        document.addEventListener('DOMContentLoaded', function() {
+            // Smooth scroll for anchor links
+            document.querySelectorAll('a[href^="#day"]').forEach(anchor => {
+                anchor.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    
+                    const targetId = this.getAttribute('href');
+                    const targetElement = document.querySelector(targetId);
 
-            new Chart(ctx, {
-                type: 'doughnut',
-                data: tripVibeData,
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            position: 'bottom',
-                            labels: {
-                                font: {
-                                    family: "'Sarabun', sans-serif",
-                                    size: 14
-                                }
-                            }
-                        },
-                        title: {
-                            display: true,
-                            text: 'สัดส่วนกิจกรรม (Must vs Try vs If)',
-                            font: {
-                                family: "'Sarabun', sans-serif",
-                                size: 16,
-                                weight: '600'
-                            },
-                            padding: {
-                                bottom: 10
-                            }
-                        },
-                        tooltip: {
-                            bodyFont: {
-                                family: "'Sarabun', sans-serif"
-                            },
-                            titleFont: {
-                                family: "'Sarabun', sans-serif"
-                            }
-                        }
-                    },
-                    cutout: '60%'
-                }
+                    if (targetElement) {
+                        // Scroll to the element
+                        window.scrollTo({
+                            top: targetElement.offsetTop - 40, // Adjusted offset for better spacing
+                            behavior: 'smooth'
+                        });
+                    }
+                });
             });
         });
     </script>
+
 </body>
 </html>
